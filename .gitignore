@@ -1,0 +1,10 @@
+/.bundle/
+/log/
+/pkg/
+/tmp/
+/*.gem
+/Gemfile.lock
+/spec/dummy/db/schema.rb
+/spec/dummy/log/
+/spec/dummy/tmp/
+/.env

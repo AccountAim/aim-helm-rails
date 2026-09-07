@@ -1,0 +1,217 @@
+<%# locals: (chat:, draft: nil, autosubmit: false, context: nil, pane: {}, examples: [], empty_state: nil) %>
+<!-- The whole chat, mountable in any element with a height: it reads the chat it is given and
+     nothing of the page around it. When its first message creates the chat it announces
+     `agent:chat-created` with the path; the page decides what to do with its address. -->
+<% routes = AimHelmRails::Engine.routes.url_helpers %>
+<% helmsmen = aim_helm_rails_helmsmen(chat) %>
+<!-- The first post creates the chat, with what it was opened on. -->
+<% path = routes.chat_messages_path(chat.id, context: chat.new_record? ? context : nil) %>
+
+<% content_for :head do %>
+  <%= javascript_module_preload_tag(*aim_helm_rails_island_modules) %>
+<% end %>
+
+<%= turbo_stream_from "agent:#{chat.id}" %>
+
+<div data-controller="aim-helm-rails--chat"
+     data-aim-helm-rails--chat-history-value="<%= chat.history_runs.to_json %>"
+     data-aim-helm-rails--chat-autosubmit-value="<%= autosubmit %>"
+     data-aim-helm-rails--chat-pane-value="<%= pane.to_json %>"
+     data-aim-helm-rails--chat-draft-value="<%= draft %>"
+     data-aim-helm-rails--chat-helmsman-value="<%= chat.helmsman %>"
+     data-aim-helm-rails--chat-helmsmen-value="<%= helmsmen.to_json %>"
+     data-aim-helm-rails--chat-path-value="<%= path %>"
+     data-aim-helm-rails--chat-session-id-value="<%= chat.id if chat.persisted? %>"
+     data-aim-helm-rails--chat-context-value="<%= context.present? %>"
+     data-aim-helm-rails--chat-upload-path-value="<%= routes.attachments_path %>"
+     class="contents">
+<!-- Turbo appends this chat's event elements and stream source here, outside the markup Vue renders. -->
+<div id="agent-events-<%= chat.id %>" data-aim-helm-rails--chat-target="events" class="hidden"></div>
+
+<div data-aim-helm-rails--chat-target="island" class="contents">
+<div data-agent-chat class="group relative isolate flex h-full min-h-0 overflow-hidden @container/chat"
+     :aria-busy="busy || null"
+     :data-pane="contextSrc && contextFold !== 'closed' ? '' : null" :data-fold="contextFold">
+<div class="group relative flex h-full max-w-full min-w-0 grow flex-col items-center overflow-hidden
+            transition-[max-width] duration-300 ease-out group-data-[pane]:@5xl/chat:max-w-[min(40rem,40%)]
+            group-data-[pane]:@5xl/chat:min-w-[30rem]">
+
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+    <div class="absolute -top-40 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full
+                bg-primary/[0.08] blur-3xl"></div>
+    <div class="absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-brand-secondary/[0.12] blur-3xl"></div>
+  </div>
+
+  <main ref="container" @scroll="onScroll"
+        class="w-full grow basis-0 min-h-0 overflow-y-auto [scrollbar-gutter:stable]">
+    <div id="agent-messages" class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+      <transcript></transcript>
+    </div>
+  </main>
+
+  <div class="relative h-0 w-full shrink-0">
+    <button type="button" v-show="scrolledUp" @click="toBottom"
+            aria-label="Scroll to bottom"
+            class="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border bg-background
+                   p-2 text-muted-foreground shadow-md hover:bg-accent hover:text-accent-foreground">
+      <%= lucide_icon "chevron-down", class: "size-4" %>
+    </button>
+  </div>
+
+  <div class="flex w-full shrink-0 flex-col items-center px-4 sm:px-6 -translate-y-[10px]
+              transition-transform duration-500
+              group-has-[#agent-messages:not(:empty)]:translate-y-0">
+    <div class="mb-8 overflow-hidden text-center transition-all duration-500
+                group-has-[#agent-messages:not(:empty)]:mb-0 group-has-[#agent-messages:not(:empty)]:max-h-0
+                group-has-[#agent-messages:not(:empty)]:opacity-0">
+      <% if empty_state %>
+        <%= empty_state %>
+      <% else %>
+        <div class="mx-auto mb-4 size-24 text-primary">
+          <%= lucide_icon "messages-square", class: "size-full", "aria-hidden": true %>
+        </div>
+        <h1 class="pb-2 text-4xl font-medium leading-tight tracking-tight text-primary">What are you looking for?</h1>
+      <% end %>
+    </div>
+
+    <!-- Vue posts the message with the page's CSRF token. -->
+    <form @submit.prevent="submit" @dragover.prevent @drop.prevent="drop"
+          class="mx-auto w-full max-w-200 @container/composer">
+      <div class="relative rounded-3xl border-2 border-primary/70 bg-card shadow-sm
+                  transition-shadow duration-300 focus-within:border-primary
+                  [--composer-inline-padding:1rem_1.25rem_0.25rem]
+                  @xl/composer:[--composer-inline-padding:1rem_18rem_1rem_3rem]">
+        <attachment-queue :items="attachments" @discard="discardAttachment"
+                          @retry="retryAttachment"></attachment-queue>
+        <textarea ref="input" v-model="draft" :readonly="busy" @paste="paste"
+                  @keydown.enter.exact.prevent="submit"
+                  rows="1" placeholder="Ask anything…" autofocus
+                  :class="multiline ? 'px-5 pt-4 pb-1' : 'p-(--composer-inline-padding)'"
+                  class="block w-full resize-none overflow-y-hidden rounded-3xl text-base
+                         outline-none max-h-[calc(8lh+1rem)] caret-primary text-foreground
+                         placeholder:text-muted-foreground"><%= draft %></textarea>
+        <!-- Narrow composers and wrapped drafts keep controls below the input. -->
+        <div :class="multiline ? '' : '@xl/composer:absolute @xl/composer:inset-x-0 @xl/composer:bottom-0 @xl/composer:pointer-events-none'"
+             class="flex items-center gap-2 px-2.5 pt-1 pb-2.5 *:pointer-events-auto @xl/composer:py-3">
+          <label aria-label="Attach files"
+                 class="ml-1.5 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground">
+            <input type="file"
+                   accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                   multiple @change="pick" class="hidden">
+            <%= lucide_icon "paperclip", class: "size-5" %>
+          </label>
+          <div class="ml-auto flex min-w-0 items-center gap-2">
+            <% if helmsmen.many? %>
+              <!-- Only a chat's first post picks its helmsman; the label takes over once it has one. -->
+              <select v-if="!helmsmanFixed" v-model="helmsman" aria-label="Helmsman"
+                      :title="helmsman.description"
+                      class="min-w-0 max-w-48 rounded-lg border-0 bg-transparent px-2 py-1 text-sm text-muted-foreground
+                             outline-none focus:ring-0">
+                <option v-for="option in helmsmen" :key="option.name" :value="option">
+                  {{ option.label }} · {{ option.setup }}
+                </option>
+              </select>
+            <% end %>
+            <span v-show="helmsmanFixed" class="mr-2 flex min-w-0 max-w-48 items-baseline gap-2 text-sm text-muted-foreground">
+              <span class="truncate" v-text="helmsman.label"></span>
+              <span class="shrink-0 text-xs opacity-60" v-text="helmsman.setup"></span>
+            </span>
+            <button type="submit" aria-label="Send" :disabled="busy"
+                    class="shrink-0 rounded-full border-0 p-2 text-primary-foreground shadow-sm shadow-primary/30
+                           bg-primary hover:bg-primary/90 disabled:opacity-50">
+              <%= lucide_icon "arrow-up", class: "size-4", "aria-hidden": true %>
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <p class="my-3 font-serif text-sm italic text-muted-foreground">AI can make mistakes. Check important details.</p>
+
+    <% if examples.any? %>
+      <div class="mx-auto mt-2 w-full max-w-200 group-has-[#agent-messages:not(:empty)]:hidden">
+        <p class="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Try an example</p>
+        <div class="divide-y divide-border overflow-hidden rounded-2xl border bg-card">
+          <% examples.each do |example| %>
+            <button type="button" @click="pickExample" data-example="<%= example[:prompt] %>"
+                    class="group/example flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left
+                           transition-colors hover:bg-primary/6">
+              <%= lucide_icon "search",
+                    class: "size-4 shrink-0 text-muted-foreground/50 transition-colors
+                            group-hover/example:text-primary" %>
+              <span class="min-w-0 flex-1 truncate text-sm text-foreground"><%= example[:prompt] %></span>
+              <%= lucide_icon "chevron-right",
+                    class: "size-4 shrink-0 text-muted-foreground/50 transition-colors
+                            group-hover/example:text-primary" %>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div aria-hidden="true"
+       class="grow basis-0 transition-[flex-grow] duration-500 ease-out
+              group-has-[#agent-messages:not(:empty)]:grow-0"></div>
+</div>
+
+<!-- The pane splits a wide chat and slides over a narrow one; `auto` opens only where it splits,
+     `closed` folds to a blade at every width. -->
+<transition enter-active-class="transition duration-300 ease-out" leave-active-class="transition duration-200 ease-in"
+            enter-from-class="translate-x-8 opacity-0 @max-5xl/chat:translate-x-full"
+            leave-to-class="translate-x-8 opacity-0 @max-5xl/chat:translate-x-full">
+<aside v-cloak v-show="contextSrc && contextFold !== 'closed'"
+       class="surface-chat-aside my-3 flex min-w-0 grow flex-col overflow-hidden rounded-l-2xl border border-r-0
+              bg-background shadow-sm group-data-[fold=auto]:@max-5xl/chat:hidden
+              @max-5xl/chat:absolute @max-5xl/chat:inset-y-0 @max-5xl/chat:right-0 @max-5xl/chat:z-20
+              @max-5xl/chat:w-[calc(100%-3rem)]
+              @max-5xl/chat:shadow-2xl">
+  <div class="flex justify-end border-b bg-muted/30 px-2 py-1">
+    <button type="button" @click="contextFold = 'closed'"
+            title="Hide context" aria-label="Hide context"
+            class="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+      <%= lucide_icon "chevron-right", class: "size-4 @max-5xl/chat:hidden" %>
+      <%= lucide_icon "x", class: "size-4 @5xl/chat:hidden" %>
+    </button>
+  </div>
+
+  <div class="min-h-0 grow overflow-y-auto">
+    <%= turbo_frame_tag "context", loading: "lazy", class: "block",
+          ":src": "contextSrc", ":key": "contextRevision" do %>
+      <div class="rounded-3xl border bg-card p-4">
+        <div class="mb-3 h-4 w-1/3 animate-pulse rounded-md bg-accent"></div>
+        <div class="h-48 animate-pulse rounded-xl bg-accent"></div>
+      </div>
+    <% end %>
+  </div>
+</aside>
+</transition>
+
+<transition enter-active-class="transition duration-300" leave-active-class="transition duration-200"
+            enter-from-class="opacity-0" leave-to-class="opacity-0">
+<div v-cloak v-show="contextSrc && contextFold !== 'closed'" @click="contextFold = 'closed'"
+     class="absolute inset-0 z-10 bg-foreground/20 @5xl/chat:hidden group-data-[fold=auto]:hidden"></div>
+</transition>
+
+<transition enter-active-class="transition-all duration-300 ease-out"
+            leave-active-class="transition-all duration-200 ease-in"
+            enter-from-class="w-0! opacity-0" leave-to-class="w-0! opacity-0">
+<button v-cloak type="button" v-show="contextSrc && contextFold !== 'open'" @click="contextFold = 'open'"
+        title="Show context" aria-label="Show context"
+        class="my-3 flex w-10 shrink-0 flex-col items-center gap-2 overflow-hidden rounded-l-2xl py-3
+               bg-gradient-to-b from-primary to-primary/85 text-primary-foreground
+               ring-1 ring-primary/40 shadow-md hover:brightness-110 group-data-[fold=auto]:@5xl/chat:hidden">
+  <%= lucide_icon "chevron-left", class: "size-4 shrink-0 opacity-80" %>
+  <span class="min-h-0 truncate [writing-mode:vertical-rl] rotate-180 px-1 py-1 text-xs font-medium tracking-wide"
+        v-text="contextTitle"></span>
+</button>
+</transition>
+</div>
+</div>
+</div>
+
+<!-- Component markup for the Vue island: inert until it mounts, so Tailwind scans these classes
+     like any other view. -->
+<% AimHelmRails::Engine.root.glob("app/views/aim_helm_rails/chats/templates/_*.html.erb").each do |template| %>
+  <%= render "aim_helm_rails/chats/templates/#{template.basename(".html.erb").to_s.delete_prefix("_")}" %>
+<% end %>

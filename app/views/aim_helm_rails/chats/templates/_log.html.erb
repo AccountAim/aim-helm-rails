@@ -1,0 +1,29 @@
+<template id="agent-log-template">
+  <!-- A subagent's own disclosure names it, so its runs contribute rows rather than a second
+       summary — and only the outermost log scrolls, so panels never nest scrollbars. -->
+  <div v-if="nested" class="text-sm text-muted-foreground">
+    <div v-if="thinking" class="mb-2 whitespace-pre-wrap break-words text-xs italic text-muted-foreground/70">{{ thinking }}</div>
+    <template v-for="{ tool, turnId } in tools" :key="tool.call_id">
+      <log-row :entry="tool" :status="tool.status"></log-row>
+      <img v-if="tool.preview" :src="tool.preview" class="my-1 ml-4 max-h-60 rounded-lg border">
+      <subagent v-if="tool.child" :child="tool.child"></subagent>
+    </template>
+    <log-row v-for="(failure, index) in failures" :key="index" :entry="failure" status="failed"></log-row>
+  </div>
+  <!-- Framed only while open: collapsed, the summary reads as a caption under the answer. -->
+  <details v-else data-agent-log :data-run-id="runId" :open="run.logOpen"
+           class="order-last mt-3 text-sm text-muted-foreground open:overflow-hidden open:rounded-lg open:border open:border-border/60 open:bg-muted/20"
+           :class="{ hidden: !summary }">
+    <summary @click="toggle" class="cursor-pointer select-none px-3 py-2 text-xs font-medium">{{ summary }}</summary>
+    <div ref="body" data-agent-log-body class="max-h-64 overflow-y-auto overflow-x-hidden px-3 pb-2">
+      <div v-if="thinking" class="mb-2 whitespace-pre-wrap break-words text-xs italic text-muted-foreground/70">{{ thinking }}</div>
+      <template v-for="{ tool, turnId } in tools" :key="tool.call_id">
+        <log-row :entry="tool" :status="tool.status"></log-row>
+        <img v-if="tool.preview" :src="tool.preview" class="my-1 ml-4 max-h-60 rounded-lg border">
+        <subagent v-if="tool.child" :child="tool.child"></subagent>
+      </template>
+      <log-row v-for="(failure, index) in failures" :key="index" :entry="failure" status="failed"></log-row>
+    </div>
+    <usage v-if="settled && spend.length" :spend="spend"></usage>
+  </details>
+</template>

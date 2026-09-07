@@ -1,0 +1,9 @@
+<template id="agent-subagent-template">
+  <details data-agent-subagent :open="child.open"
+           class="my-2 ml-1 border-l-2 border-primary/20 py-1 pl-4 text-foreground">
+    <summary @click="toggle" class="cursor-pointer select-none text-xs font-medium">{{ label }}</summary>
+    <div class="mt-0.5 text-xs text-muted-foreground">{{ task }}</div>
+    <div v-if="!runs.length" class="mt-2 text-xs text-muted-foreground">Queued…</div>
+    <run v-for="(run, runId) in child.runs" :key="runId" :run="run" :run-id="runId" nested :spend="[]"></run>
+  </details>
+</template>

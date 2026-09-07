@@ -1,0 +1,27 @@
+<template id="agent-usage-template">
+  <div class="border-t border-border/60">
+    <table class="w-full table-fixed text-[11px] tabular-nums">
+      <thead class="bg-muted/40">
+        <tr class="text-muted-foreground uppercase tracking-wider">
+          <th class="w-[46%] px-3 py-1.5 text-left font-medium">model</th>
+          <th class="px-2 py-1.5 text-right font-medium">in</th>
+          <th class="px-2 py-1.5 text-right font-medium">out</th>
+          <th class="px-2 py-1.5 text-right font-medium">cached</th>
+          <th class="px-2 py-1.5 text-right font-medium">cost</th>
+          <th class="px-3 py-1.5 text-right font-medium">calls</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-border/60 font-mono">
+        <tr v-for="entry in rows" :key="entry.label"
+            :class="entry.strong ? 'bg-muted/50 font-medium text-foreground' : 'text-muted-foreground'">
+          <td class="truncate px-3 py-1.5 font-sans" :title="entry.label">{{ entry.label }}</td>
+          <td class="px-2 py-1.5 text-right">{{ tokens(entry.row.input) }}</td>
+          <td class="px-2 py-1.5 text-right">{{ tokens(entry.row.output) }}</td>
+          <td class="px-2 py-1.5 text-right text-emerald-600">{{ entry.row.cached ? tokens(entry.row.cached) : "—" }}</td>
+          <td class="px-2 py-1.5 text-right">{{ money(entry.row.cost) }}</td>
+          <td class="px-3 py-1.5 text-right">{{ entry.calls }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>

@@ -1,0 +1,4 @@
+<template id="agent-text-block-template">
+  <article v-if="html" class="markdown" v-html="html"></article>
+  <article v-else class="markdown">{{ block.content }}</article>
+</template>

@@ -1,0 +1,17 @@
+<%# locals: (attachment:, index:, url_options: {}) %>
+<div class="flex flex-col items-center gap-3"
+     data-controller="aim-helm-rails--pdf"
+     data-aim-helm-rails--pdf-url-value="<%= aim_helm_rails.attachment_path(attachment, **url_options) %>"
+     data-aim-helm-rails--pdf-index-value="<%= index %>"
+     data-page-count="0"
+     data-loading>
+  <canvas class="block h-auto max-w-full rounded-lg border bg-white shadow-sm"
+          data-aim-helm-rails--pdf-target="canvas"></canvas>
+  <nav hidden class="flex items-center gap-3 text-sm" data-aim-helm-rails--pdf-target="navigation">
+    <button type="button" class="rounded bg-muted px-3 py-1 disabled:opacity-50"
+            data-action="aim-helm-rails--pdf#previous" data-aim-helm-rails--pdf-target="previous">Previous</button>
+    <span data-aim-helm-rails--pdf-target="status"></span>
+    <button type="button" class="rounded bg-muted px-3 py-1 disabled:opacity-50"
+            data-action="aim-helm-rails--pdf#next" data-aim-helm-rails--pdf-target="next">Next</button>
+  </nav>
+</div>

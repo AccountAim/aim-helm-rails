@@ -1,0 +1,22 @@
+<template id="agent-attachment-queue-template">
+  <div v-if="items.length" class="flex flex-wrap gap-2 px-4 pt-4">
+    <div v-for="item in items" :key="item.id" data-agent-attachment :data-status="item.status"
+         :title="item.error || item.name"
+         class="group/chip relative size-16 overflow-hidden rounded-xl border bg-muted">
+      <img v-if="item.thumbnailUrl" :src="item.thumbnailUrl" :alt="item.name" class="size-full object-cover"
+           :class="item.status === 'uploaded' ? '' : 'opacity-40'">
+      <span v-else class="grid size-full place-items-center px-1 text-center text-[10px]
+                          leading-tight text-muted-foreground">{{ item.name }}</span>
+      <button v-if="item.status === 'failed'" type="button" @click="$emit('retry', item)"
+              aria-label="Retry upload"
+              class="absolute inset-0 grid place-items-center bg-red-500/20 text-xs font-medium text-red-700">
+        Retry
+      </button>
+      <button type="button" @click="$emit('discard', item)" aria-label="Remove attachment"
+              class="absolute right-0.5 top-0.5 hidden size-5 place-items-center rounded-full
+                     bg-background/90 text-muted-foreground group-hover/chip:grid hover:text-foreground">
+        <%= lucide_icon "x", class: "size-3" %>
+      </button>
+    </div>
+  </div>
+</template>

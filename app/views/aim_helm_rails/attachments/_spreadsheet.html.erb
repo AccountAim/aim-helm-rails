@@ -1,0 +1,10 @@
+<%# locals: (attachment:, index:, url_options: {}) %>
+<div class="flex flex-col gap-2"
+     data-controller="aim-helm-rails--spreadsheet"
+     data-aim-helm-rails--spreadsheet-url-value="<%= aim_helm_rails.attachment_path(attachment, **url_options) %>"
+     data-aim-helm-rails--spreadsheet-index-value="<%= index %>"
+     data-page-count="0"
+     data-loading>
+  <nav role="tablist" class="flex flex-wrap gap-1 text-sm" data-aim-helm-rails--spreadsheet-target="tabs"></nav>
+  <div class="overflow-auto" data-aim-helm-rails--spreadsheet-target="sheet"></div>
+</div>

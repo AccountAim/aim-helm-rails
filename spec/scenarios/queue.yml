@@ -1,0 +1,9 @@
+test:
+  dispatchers:
+    - polling_interval: 0.1
+      batch_size: 1
+  workers:
+    - queues: agent_acceptance
+      threads: 1
+      processes: 1
+      polling_interval: 0.1

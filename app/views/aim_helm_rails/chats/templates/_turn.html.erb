@@ -1,0 +1,15 @@
+<template id="agent-turn-template">
+  <div>
+    <template v-for="block in blocks" :key="block.id || block.index">
+      <text-block v-if="block.type === 'text'" :block="block"></text-block>
+      <!-- Turbo owns each host-rendered frame's contents. -->
+      <turbo-frame v-else-if="block.type === 'resource'" v-once :id="block.id" :src="block.src"
+                   loading="lazy" class="surface-chat-inline my-4 block">
+        <div class="rounded-3xl border bg-card p-4">
+          <div data-slot="skeleton" class="bg-accent animate-pulse rounded-md mb-3 h-4 w-1/3"></div>
+          <div data-slot="skeleton" class="bg-accent animate-pulse rounded-xl h-48"></div>
+        </div>
+      </turbo-frame>
+    </template>
+  </div>
+</template>

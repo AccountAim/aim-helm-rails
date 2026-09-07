@@ -1,0 +1,24 @@
+<template id="agent-log-row-template">
+  <details class="block">
+    <summary class="cursor-pointer list-none">
+      <div data-log-entry class="flex items-center gap-2 py-0.5">
+        <span :data-state="status" class="inline-block size-2 shrink-0 rounded-full
+              data-[state=started]:animate-pulse data-[state=started]:bg-yellow-500
+              data-[state=done]:bg-green-500 data-[state=failed]:bg-red-500"></span>
+        <span class="min-w-0 flex-1 truncate">
+          <span class="capitalize">{{ label }}</span>
+          <!-- The separator's leading space must sit on this line; a newline before it is condensed away. -->
+          <span v-if="detail" class="font-mono text-xs text-muted-foreground/65"> · {{ detail }}</span>
+        </span>
+      </div>
+    </summary>
+    <div class="space-y-2 rounded-lg border p-3">
+      <p class="text-sm font-medium capitalize">{{ label }}</p>
+      <p v-if="entry.error" class="text-sm text-destructive">{{ entry.error }}</p>
+      <pre v-if="pretty" class="max-h-80 overflow-auto rounded-lg bg-muted p-3 font-mono
+           text-xs leading-relaxed">{{ pretty }}</pre>
+      <p v-else-if="detail" class="text-sm text-muted-foreground">{{ detail }}</p>
+      <p v-else class="text-sm text-muted-foreground">No arguments.</p>
+    </div>
+  </details>
+</template>

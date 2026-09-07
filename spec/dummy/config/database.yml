@@ -1,0 +1,17 @@
+test:
+  primary:
+    adapter: postgresql
+    host: <%= ENV.fetch("DB_HOST", "localhost") %>
+    username: <%= ENV.fetch("DB_USER", "postgres") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "postgres") %>
+    database: aim_helm_rails_test
+    pool: 10
+  queue:
+    adapter: postgresql
+    host: <%= ENV.fetch("DB_HOST", "localhost") %>
+    username: <%= ENV.fetch("DB_USER", "postgres") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "postgres") %>
+    database: aim_helm_rails_test_queue
+    schema_dump: queue_schema.rb
+    migrations_paths: db/queue_migrate
+    pool: 10

@@ -1,0 +1,36 @@
+name: CI
+
+"on":
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rubocop:
+    name: RuboCop
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: extractions/setup-just@v4
+        with:
+          just-version: 1.58.0
+      - run: just rubocop
+
+  test:
+    name: Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: extractions/setup-just@v4
+        with:
+          just-version: 1.58.0
+      - run: just spec
+      - run: just worker-smoke
+      - run: just package
+      - if: always()
+        run: just stop

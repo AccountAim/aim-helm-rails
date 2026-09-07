@@ -1,0 +1,28 @@
+<template id="agent-run-template">
+  <div data-agent-run>
+    <div v-if="!nested && (run.message || run.attachments?.length)" class="ml-auto mt-10 max-w-[80%]">
+      <div v-if="run.attachments?.length" class="mb-1.5 flex flex-wrap justify-end gap-1.5">
+        <a v-for="file in run.attachments" :key="file.gid" data-agent-sent-attachment
+           :href="file.url" target="_blank" rel="noopener" :title="file.name"
+           class="block size-24 overflow-hidden rounded-xl border bg-card">
+          <img v-if="file.thumbnail_url" :src="file.thumbnail_url" :alt="file.name"
+               loading="lazy" class="size-full object-cover">
+          <span v-else class="grid size-full place-items-center px-2 text-center text-xs
+                              leading-tight text-muted-foreground">{{ file.name }}</span>
+        </a>
+      </div>
+      <div v-if="run.message" class="rounded-2xl bg-primary px-5 py-3 text-primary-foreground shadow-sm">{{ run.message }}</div>
+      <time class="mt-2.5 block text-right text-xs text-muted-foreground">{{ stamp }}</time>
+    </div>
+    <div class="group/run flex flex-col" :class="nested ? 'mt-3' : 'mt-6'"
+         :aria-busy="run.status === 'running' ? 'true' : null">
+      <div class="order-1 hidden gap-1.5 py-1 group-aria-busy/run:flex" aria-hidden="true">
+        <span class="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]"></span>
+        <span class="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]"></span>
+        <span class="size-2 animate-bounce rounded-full bg-primary"></span>
+      </div>
+      <turn v-for="(turn, turnId) in run.turns" :key="turnId" :turn="turn"></turn>
+      <log :run="run" :run-id="runId" :nested="nested" :spend="spend"></log>
+    </div>
+  </div>
+</template>

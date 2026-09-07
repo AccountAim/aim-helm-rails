@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Acceptance"
+  short_description: "Validate Agent lifecycle scenarios"
+  default_prompt: "Use $agent-acceptance to validate the Agent engine acceptance scenarios."

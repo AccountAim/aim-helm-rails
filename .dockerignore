@@ -1,0 +1,10 @@
+.git
+.bundle
+log
+pkg
+tmp
+*.gem
+spec/dummy/log
+spec/dummy/tmp
+.env
+Gemfile.lock

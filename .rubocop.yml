@@ -1,0 +1,90 @@
+AllCops:
+  TargetRubyVersion: 3.4
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - tmp/**/*
+    - pkg/**/*
+    - spec/dummy/db/*schema.rb
+
+require:
+  - ./.rubocop/cop/layout/helper_method_at_top.rb
+  - ./.rubocop/cop/layout/empty_lines_between_one_line_methods.rb
+  - ./.rubocop/cop/layout/empty_lines_around_multiline_blocks.rb
+  - ./.rubocop/cop/layout/empty_lines_around_multiline_constants.rb
+
+Layout/LineLength:
+  Max: 100
+  AllowedPatterns:
+    - '\A\s*#'
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/ItBlockParameter:
+  EnforcedStyle: always
+  Exclude:
+    - spec/**/*
+
+Metrics/ClassLength:
+  Max: 120
+  CountAsOne: ["heredoc"]
+
+Metrics/ModuleLength:
+  CountAsOne: ["heredoc"]
+
+Metrics/MethodLength:
+  Exclude:
+    - db/migrate/**/*
+
+Metrics/AbcSize:
+  Exclude:
+    - db/migrate/**/*
+
+Metrics/BlockLength:
+  AllowedMethods:
+    - schema
+  Exclude:
+    - spec/**/*_spec.rb
+    - config/routes.rb
+
+Layout/HelperMethodAtTop:
+  Include:
+    - "**/app/controllers/**/*.rb"
+
+Layout/EmptyLinesBetweenOneLineMethods:
+  Include:
+    - "**/app/controllers/**/*.rb"
+
+Naming/PredicateMethod:
+  AllowedMethods:
+    - release
+    - renew
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
+Layout/CaseIndentation:
+  EnforcedStyle: end
+
+Naming/FileName:
+  Exclude:
+    - lib/aim-helm-rails.rb
