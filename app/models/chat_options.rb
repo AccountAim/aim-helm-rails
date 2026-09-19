@@ -16,6 +16,14 @@ module AimHelmRails
         key = chat.helmsman
         key ? [all.find { it.key == key } || new(key:)] : all
       end
+
+      # Selected to begin with: the choice that runs a helmsman as declared, else the first.
+      def chosen(options) = options.find(&:declared?) || options.first
+    end
+
+    def declared?
+      declared = AimHelmRails.host.helmsman(helmsman)
+      [model, reasoning] == [declared.helmsman_model, declared.helmsman_reasoning]
     end
 
     def initialize(key:, label: key)

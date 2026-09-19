@@ -27,7 +27,7 @@ The integration implements these class methods:
 | --- | --- |
 | `tools` | Registry implementing `resolve`, `identifiers`, and `register`; normally a subclass of `AimHelmRails::Tool`. |
 | `helmsman(name)` | Helmsman definition for execution, exposing `agent`. |
-| `chat_options` | Composer choices as `{ key:, label: }` hashes, first selected by default. A key is a helmsman name, run as declared, or `helmsman:model/reasoning`, such as `analyst:gpt-5.6-terra/low`, overriding its model and effort. A chat built with a key in `helmsman` is pinned to it; fewer than two choices show a label or nothing. |
+| `chat_options` | Composer choices as `{ key:, label: }` hashes; the one running its helmsman as declared is selected to begin with, else the first. A key is a helmsman name, run as declared, or `helmsman:model/reasoning`, such as `analyst:gpt-5.6-terra/low`, overriding its model and effort. A chat built with a key in `helmsman` is pinned to it; fewer than two choices show a label or nothing. |
 | `sessions(actor:, tenant:)` | Authorized interactive-session relation; the engine also applies the tenant scope. |
 | `open_chat(actor:, tenant:, id:, options:, context:)` | Persist an interactive session with `helmsman: options.key`. `options` is the posted key as `AimHelmRails::ChatOptions`, well-formed and naming a catalog model, or nil when none was posted; raise when it is not one this host allows. `context` is an optional opaque host reference. Called inside the first-message transaction. |
 | `authorize!(record, actor:, tenant:, action:)` | Raise when access to a persisted record is denied. Engine calls use `read` and `update`. |
