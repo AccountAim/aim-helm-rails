@@ -27,10 +27,9 @@ The integration implements these class methods:
 | --- | --- |
 | `tools` | Registry implementing `resolve`, `identifiers`, and `register`; normally a subclass of `AimHelmRails::Tool`. |
 | `helmsman(name)` | Helmsman definition for execution, exposing `agent`. |
-| `interactive_helmsman(name)` | Validate a browser-selected helmsman and expose `helmsman_name`. |
-| `interactive_helmsmen_for(chat)` | Allowed helmsman definitions for the composer. |
+| `chat_options` | Composer choices as `{ key:, label: }` hashes, first selected by default. A key is a helmsman name, run as declared, or `helmsman:model/reasoning`, such as `analyst:gpt-5.6-terra/low`, overriding its model and effort. A chat built with a key in `helmsman` is pinned to it; fewer than two choices show a label or nothing. |
 | `sessions(actor:, tenant:)` | Authorized interactive-session relation; the engine also applies the tenant scope. |
-| `open_chat(actor:, tenant:, id:, helmsman:, context:)` | Persist an interactive session. `context` is an optional opaque host reference. Called inside the first-message transaction. |
+| `open_chat(actor:, tenant:, id:, options:, context:)` | Persist an interactive session with `helmsman: options.key`. `options` is the posted key as `AimHelmRails::ChatOptions`, well-formed and naming a catalog model, or nil when none was posted; raise when it is not one this host allows. `context` is an optional opaque host reference. Called inside the first-message transaction. |
 | `authorize!(record, actor:, tenant:, action:)` | Raise when access to a persisted record is denied. Engine calls use `read` and `update`. |
 | `authorize_upload!(actor:, tenant:)` | Authorize creating staged uploads in the supplied tenant. |
 | `session_path(session)` | Host navigation destination announced when a chat is created. |
@@ -161,18 +160,20 @@ integrating the engine.
 ## Execution and identities
 
 ```ruby
-chat = AimHelmRails::Session.create!(actor:, tenant:, helmsman: "analyst", interactive: true)
+chat = AimHelmRails::Session.create!(actor:, tenant:, helmsman: "analyst:gpt-5.6-sol/low",
+                                     interactive: true)
 AimHelmRails::Runtime.run(chat, "Summarize recent activity.", actor:, tenant:)
 AimHelmRails::Runtime.read(session: chat, actor:, tenant:)
 AimHelmRails::Runtime.reply(session: chat, actor:, tenant:)
 AimHelmRails::Runtime.stop(session: chat, actor:, tenant:)
 ```
 
-Each turn rebuilds its helmsman and retains the last run's model and reasoning settings. Workers and
-subagents restore an `ExecutionContext` containing the persisted execution actor and tenant. In a
-AimHelm tool context, `context.app` is that execution context; it does not consult the actor's
-currently selected organization. A collaborator can start a later turn, but must wait for the
-active actor's run to finish before sending input under a different grant.
+Each turn rebuilds its agent from the session's `helmsman` key: the named helmsman, with the key's
+model and reasoning over its own when the key carries them. Workers and subagents restore an
+`ExecutionContext` containing the persisted execution actor and tenant. In a AimHelm tool
+context, `context.app` is that execution context; it does not consult the actor's currently
+selected organization. A collaborator can start a later turn, but must wait for the active actor's
+run to finish before sending input under a different grant.
 
 Concrete tools inherit `AimHelmRails::Tool`; helmsmen inherit `AimHelmRails::Helmsman`. Durable
 records contain registered tool identifiers, resolved by workers before execution.

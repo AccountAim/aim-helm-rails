@@ -1,4 +1,4 @@
-import { createApp, provide, ref } from "vue"
+import { computed, createApp, provide, ref } from "vue"
 import { createChatStore } from "aim_helm_rails/chat/store"
 import { useAttachments } from "aim_helm_rails/chat/attachments"
 import { useComposer } from "aim_helm_rails/chat/composer"
@@ -241,19 +241,7 @@ const Transcript = {
 
 // Vue owns the chat page itself: the server-rendered markup inside the mount element is this
 // component's template, so the page paints as Rails HTML and stays reactive from the mount on.
-const ChatRoot = ({
-  autosubmit,
-  context,
-  draft,
-  events,
-  helmsman: chosen,
-  helmsmen,
-  pane: pinned,
-  path,
-  runs,
-  session,
-  uploadPath,
-}) => ({
+const ChatRoot = ({ autosubmit, context, draft, events, options, pane: pinned, path, runs, session, uploadPath }) => ({
   setup() {
     const store = createChatStore(session)
     const pane = useContextPane(pinned)
@@ -267,18 +255,13 @@ const ChatRoot = ({
       if (store.apply(event)) scroll.follow(event.name)
     }
 
-    const helmsman = ref(helmsmen.find((option) => option.name === chosen) || helmsmen[0])
-    // A chat keeps the helmsman it has; until then the first message picks one.
-    const helmsmanFixed = ref(Boolean(chosen))
+    const chosen = ref(options[0])
+    // The first post fixes the choice, if there was one to make.
+    const chosenFixed = computed(() => Boolean(session.value) || options.length < 2)
     const pin = (payload) => pane.open(payload, "auto")
-    const transport = useChatTransport({ context, events, helmsman, path, pin, receive, session, store })
+    const transport = useChatTransport({ chosen, context, events, path, pin, receive, session, store })
     const attachments = useAttachments(uploadPath)
-    const send = async (...args) => {
-      const sent = await transport.send(...args)
-      if (sent) helmsmanFixed.value = true
-      return sent
-    }
-    const composer = useComposer({ attachments, draft, send })
+    const composer = useComposer({ attachments, draft, send: transport.send })
 
     // Refs unwrap in the template only at the top level of what setup returns.
     return {
@@ -292,9 +275,9 @@ const ChatRoot = ({
       contextRevision: pane.revision,
       contextSrc: pane.src,
       contextTitle: pane.title,
-      helmsman,
-      helmsmanFixed,
-      helmsmen,
+      chosen,
+      chosenFixed,
+      options,
       sessionId: session,
     }
   },
@@ -307,8 +290,8 @@ const ChatRoot = ({
   },
 })
 
-export const mountChat = (options) => {
-  const app = createApp(ChatRoot({ ...options, session: ref(options.sessionId) }))
+export const mountChat = (config) => {
+  const app = createApp(ChatRoot({ ...config, session: ref(config.sessionId) }))
   app.config.compilerOptions.isCustomElement = (tag) => tag === "turbo-frame"
   Object.entries({ AttachmentQueue, Log, LogRow, Run, Subagent, TextBlock, Transcript, Turn, Usage }).forEach(
     ([name, component]) => {

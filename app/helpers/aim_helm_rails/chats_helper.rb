@@ -14,18 +14,7 @@ module AimHelmRails
       end
     end
 
-    # [{ name: "analyst", label: "Analyst", description: "Answers…", setup: "terra/low" }, …]
-    def aim_helm_rails_helmsmen(chat)
-      AimHelmRails.host.interactive_helmsmen_for(chat).map do
-        { name: it.helmsman_name, label: it.helmsman_name.humanize,
-          description: it.helmsman_description, setup: aim_helm_rails_setup_label(chat, it) }
-      end
-    end
-
-    def aim_helm_rails_setup_label(chat, helmsman)
-      setup = chat.setup.presence || { model: helmsman.helmsman_model,
-                                       reasoning: helmsman.helmsman_reasoning }
-      "#{setup.fetch(:model).split("-").last}/#{setup[:reasoning]}"
-    end
+    # [{ key: "analyst:gpt-5.6-terra/low", label: "Analyst, quick" }, …]
+    def aim_helm_rails_chat_options(chat) = ChatOptions.for(chat)
   end
 end

@@ -24,28 +24,32 @@ module AimHelmRails
 
         AimHelmRails.host.open_chat(
           actor: current_actor, tenant: current_tenant, id: params[:chat_id],
-          helmsman: helmsman_name, context: params[:context]
+          options: chosen_options, context: params[:context]
         )
       end
 
-      def helmsman_name
-        AimHelmRails.host.interactive_helmsman(message_params[:helmsman]).helmsman_name
+      # nil when the host offered nothing to choose.
+      def chosen_options
+        key = message_params[:options]
+        ChatOptions.new(key:) if key.present?
       end
 
       def authorize_chat!
-        AimHelmRails.host.authorize!(chat, actor: current_actor, tenant: current_tenant,
-                                           action: :update)
+        AimHelmRails.host.authorize!(
+          chat, actor: current_actor, tenant: current_tenant, action: :update
+        )
       end
 
       def claim_attachments
-        Attachment.claim!(Array(message_params[:attachments]), session: chat,
-                                                               actor: current_actor,
-                                                               tenant: current_tenant)
+        Attachment.claim!(
+          Array(message_params[:attachments]),
+          session: chat, actor: current_actor, tenant: current_tenant,
+        )
       end
 
       def sessions
-        AimHelmRails.host.sessions(actor: current_actor, tenant: current_tenant)
-                    .within(current_tenant)
+        relation = AimHelmRails.host.sessions(actor: current_actor, tenant: current_tenant)
+        relation.within(current_tenant)
       end
 
       def message? = message_params[:content].present? || attached.any?
@@ -58,8 +62,8 @@ module AimHelmRails
       end
 
       def message_params
-        @message_params ||= params.expect(message: [:content, :helmsman, { attachments: [] }])
-                                  .to_h.symbolize_keys
+        @message_params ||=
+          params.expect(message: [:content, :options, { attachments: [] }]).to_h.symbolize_keys
       end
 
       def bind_response

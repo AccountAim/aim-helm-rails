@@ -4,7 +4,7 @@ export const csrfToken = () => document.querySelector("meta[name=csrf-token]")?.
 
 // Every post goes to the chat's messages path; the first one creates the chat, and its response
 // names it. A chat opened on something posts nothing at first, so the agent can start on it.
-export const useChatTransport = ({ store, session, events, helmsman, context, path, pin, receive }) => {
+export const useChatTransport = ({ store, session, events, chosen, context, path, pin, receive }) => {
   const onEvent = ({ detail }) => receive(detail)
 
   onMounted(() => {
@@ -14,7 +14,8 @@ export const useChatTransport = ({ store, session, events, helmsman, context, pa
   onUnmounted(() => events.removeEventListener("agent:event", onEvent))
 
   const post = (message, attachments) => {
-    const body = new URLSearchParams({ "message[content]": message, "message[helmsman]": helmsman.value.name })
+    const body = new URLSearchParams({ "message[content]": message })
+    if (!session.value && chosen.value) body.append("message[options]", chosen.value.key)
     attachments.forEach(({ gid }) => body.append("message[attachments][]", gid))
 
     return fetch(path, {

@@ -49,10 +49,8 @@ module AimHelmRails
     def aside_pin = history.aside_pin
     def usage = AimHelm.session(id).usage
 
-    def setup
-      run = entries.where(kind: "run_record").order(:id).last
-      run ? run.payload.slice("model", "reasoning").symbolize_keys : {}
-    end
+    # `helmsman` holds the chat's options key; see ChatOptions.
+    def options = ChatOptions.new(key: helmsman)
 
     private
 

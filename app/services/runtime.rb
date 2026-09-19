@@ -75,8 +75,7 @@ module AimHelmRails
       private
 
       def definition_for(session)
-        definition = with_registered_tools(AimHelmRails.host.helmsman(session.helmsman).agent)
-        session.setup.any? ? definition.with(**session.setup) : definition
+        with_registered_tools(session.options.agent)
       end
 
       def bind_actor!(session, actor, aim_helm_session)
