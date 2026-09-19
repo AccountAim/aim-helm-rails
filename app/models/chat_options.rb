@@ -5,7 +5,7 @@ module AimHelmRails
   class ChatOptions
     KEY = %r{\A(?<helmsman>[^:]+)(?::(?<model>[^/]+)/(?<reasoning>[^/]+))?\z}
 
-    attr_reader :key, :label, :helmsman, :model, :reasoning
+    attr_reader :key, :label, :selected, :helmsman, :model, :reasoning
 
     class << self
       def all = AimHelmRails.host.chat_options.map { new(**it) }
@@ -16,22 +16,15 @@ module AimHelmRails
         key = chat.helmsman
         key ? [all.find { it.key == key } || new(key:)] : all
       end
-
-      # Selected to begin with: the choice that runs a helmsman as declared, else the first.
-      def chosen(options) = options.find(&:declared?) || options.first
     end
 
-    def declared?
-      declared = AimHelmRails.host.helmsman(helmsman)
-      [model, reasoning] == [declared.helmsman_model, declared.helmsman_reasoning]
-    end
-
-    def initialize(key:, label: key)
+    def initialize(key:, label: key, selected: false)
       parts = KEY.match(key) ||
               raise(AimHelm::ConfigurationError,
                     "chat options #{key.inspect} are not helmsman:model/reasoning")
       @key = key
       @label = label
+      @selected = selected
       @helmsman = parts[:helmsman]
       @model = parts[:model]
       @reasoning = parts[:reasoning]&.to_sym
@@ -43,6 +36,6 @@ module AimHelmRails
       model ? declared.with(model:, reasoning:) : declared
     end
 
-    def as_json(*) = { key:, label: }
+    def as_json(*) = { key:, label:, selected: }
   end
 end

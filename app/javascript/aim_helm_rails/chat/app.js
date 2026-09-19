@@ -241,19 +241,7 @@ const Transcript = {
 
 // Vue owns the chat page itself: the server-rendered markup inside the mount element is this
 // component's template, so the page paints as Rails HTML and stays reactive from the mount on.
-const ChatRoot = ({
-  autosubmit,
-  chosen: preselected,
-  context,
-  draft,
-  events,
-  options,
-  pane: pinned,
-  path,
-  runs,
-  session,
-  uploadPath,
-}) => ({
+const ChatRoot = ({ autosubmit, context, draft, events, options, pane: pinned, path, runs, session, uploadPath }) => ({
   setup() {
     const store = createChatStore(session)
     const pane = useContextPane(pinned)
@@ -267,7 +255,7 @@ const ChatRoot = ({
       if (store.apply(event)) scroll.follow(event.name)
     }
 
-    const chosen = ref(options.find((choice) => choice.key === preselected))
+    const chosen = ref(options.find((choice) => choice.selected) || options[0])
     // The first post fixes the choice, if there was one to make.
     const chosenFixed = computed(() => Boolean(session.value) || options.length < 2)
     const pin = (payload) => pane.open(payload, "auto")

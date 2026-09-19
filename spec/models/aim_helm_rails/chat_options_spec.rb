@@ -30,12 +30,9 @@ RSpec.describe AimHelmRails::ChatOptions do
       .to have_attributes(model: "gpt-5.6-sol", reasoning: :high)
   end
 
-  it "starts on the choice that runs the helmsman as declared, else the first" do
-    declared = double(helmsman_model: "gpt-5.6-sol", helmsman_reasoning: :high)
-    allow(AimHelmRails.host).to receive(:helmsman).and_return(declared)
-
-    expect(described_class.chosen(described_class.all).label).to eq("Deep")
-    expect(described_class.chosen(described_class.all.first(1)).label).to eq("Quick")
+  it "carries the host's selection to the composer" do
+    expect(described_class.new(key: "probe", label: "Probe", selected: true).as_json)
+      .to eq(key: "probe", label: "Probe", selected: true)
   end
 
   it "offers an unsaved chat every choice, and pins one opened on a key" do

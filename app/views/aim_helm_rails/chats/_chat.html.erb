@@ -19,7 +19,6 @@
      data-aim-helm-rails--chat-pane-value="<%= pane.to_json %>"
      data-aim-helm-rails--chat-draft-value="<%= draft %>"
      data-aim-helm-rails--chat-options-value="<%= options.to_json %>"
-     data-aim-helm-rails--chat-chosen-value="<%= AimHelmRails::ChatOptions.chosen(options)&.key %>"
      data-aim-helm-rails--chat-path-value="<%= path %>"
      data-aim-helm-rails--chat-session-id-value="<%= chat.id if chat.persisted? %>"
      data-aim-helm-rails--chat-context-value="<%= context.present? %>"
