@@ -298,7 +298,7 @@ export const mountChat = (config) => {
       app.component(name, component)
     },
   )
-  app.mount(options.root)
+  app.mount(config.root)
 
   return { unmount: () => app.unmount() }
 }
