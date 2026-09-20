@@ -102,7 +102,7 @@
           <div class="ml-auto flex min-w-0 items-center gap-2">
             <% if choices.many? %>
               <!-- The first post fixes the choice; from then on it reads as a label. -->
-              <select v-if="!chosenFixed" v-model="chosen" aria-label="Chat options"
+              <select v-if="!chosenFixed" v-model="chosen" aria-label="Agent, model and effort"
                       class="min-w-0 max-w-48 rounded-lg border-0 bg-transparent px-2 py-1 text-sm text-muted-foreground
                              outline-none focus:ring-0">
                 <option v-for="choice in choices" :key="choice.key" :value="choice" v-text="choice.label"></option>
