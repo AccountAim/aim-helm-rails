@@ -12,7 +12,9 @@ Each engine registers its Ruby controllers, jobs, models, and services under its
 The custom root supplies the namespace; a generated namespace directory would add it a second time.
 Place generated files directly in those directories while retaining their Ruby namespace:
 `app/models/session.rb` defines `AimHelmRails::Session`. Helpers, views, and JavaScript keep
-namespace directories for their separate lookup conventions.
+namespace directories for their separate lookup conventions. `app/models` holds data and
+declarations: records, value objects, concerns, and the `Helmsman` and `Tool` base classes.
+`app/services` holds operations: `Runtime`, encoders, presenters.
 
 Separate method definitions with one blank line when either is multiline; keep consecutive one-line
 definitions together. Separate multiline control flow from neighboring statements. Group multiple
