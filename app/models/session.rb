@@ -49,8 +49,8 @@ module AimHelmRails
     def aside_pin = history.aside_pin
     def usage = AimHelm.session(id).usage
 
-    # `helmsman` holds the chat's options key; see ChatOptions.
-    def options = ChatOptions.new(helmsman)
+    # The `helmsman` column holds the whole key, not just a name.
+    def chat_key = ChatKey.new(helmsman)
 
     private
 

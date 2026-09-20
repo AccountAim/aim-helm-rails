@@ -15,10 +15,12 @@ module AimHelmRails
     end
 
     # The host's list, or the one key a chat was opened on.
-    def aim_helm_rails_chat_options(chat)
+    def aim_helm_rails_chat_choices(chat)
       offered = AimHelmRails.host.chat_options
       key = chat.helmsman
-      key ? [offered.find { it[:key] == key } || { key:, label: key }] : offered
+      return offered unless key
+
+      [offered.find { it[:key] == key } || { key:, label: key }]
     end
   end
 end

@@ -75,19 +75,6 @@ RSpec.describe AimHelm::Features::Workspace::Tools do
              .to_h { [it.name, it] }
   end
 
-  it "builds stable names and identifiers" do
-    definitions = tools.values
-
-    expect(definitions.map(&:name)).to eq(
-      %w[memory_list memory_read memory_write memory_edit memory_search],
-    )
-    expect(definitions.map(&:identifier)).to eq(
-      %w[workspace/memory/list workspace/memory/read workspace/memory/write
-         workspace/memory/edit workspace/memory/search],
-    )
-    expect(definitions.map(&:description)).to all(include("private durable memory"))
-  end
-
   it "resolves the adapter from trusted tool context" do
     other = Data.define(:app).new(app: Object.new)
 

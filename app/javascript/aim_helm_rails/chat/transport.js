@@ -15,6 +15,7 @@ export const useChatTransport = ({ store, session, events, chosen, context, path
 
   const post = (message, attachments) => {
     const body = new URLSearchParams({ "message[content]": message })
+    // Only the first post picks; after that the chat carries its key.
     if (!session.value) body.append("message[key]", chosen.value.key)
     attachments.forEach(({ gid }) => body.append("message[attachments][]", gid))
 

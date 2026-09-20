@@ -13,9 +13,6 @@ RSpec.describe AimHelmRails::ClippedJson do
     expect(clipped.bytesize).to be < 800
     expect(clipped).to end_with("… [truncated: showing 500 of 800 bytes]")
     expect(clipped).to be_valid_encoding
-  end
-
-  it "appends the hint that says how to reach the rest" do
     expect(described_class.call("x" * 501, detail: :brief, hint: "explore it with exec_cli"))
       .to end_with("[truncated: showing 500 of 501 bytes; explore it with exec_cli]")
   end

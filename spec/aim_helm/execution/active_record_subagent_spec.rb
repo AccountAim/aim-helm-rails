@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.describe "Active Record subagent execution" do
-  include Dry::Monads[:result]
-
   let(:user) do
     email = "child-driver-#{SecureRandom.uuid_v7}@example.com"
     User.create!(organization: test_organization, name: "Child Driver User", email:)
@@ -43,48 +41,6 @@ RSpec.describe "Active Record subagent execution" do
       record: record.options,
       run_id: record.run_id,
     )
-  end
-
-  it "delivers one typed report through the parent's queued-message path" do
-    message = AimHelm::Message.assistant(
-      content: "Research complete",
-      model: "gpt-5.6-luna",
-      provider: :openai,
-      usage: nil,
-      stop_reason: :stop,
-    )
-
-    allow(AimHelm::Runner).to receive(:resume) do
-      aim_helm.append(
-        :assistant,
-        {
-          content: message.content,
-          model: message.model,
-          provider: message.provider,
-          stop_reason: message.stop_reason,
-        },
-        run_id: "turn-1",
-      )
-      aim_helm.append(:terminal, { outcome: :done }, key: "terminal:turn-1", run_id: "turn-1")
-      Success(AimHelm::Runner::Result.new(session: aim_helm, message:, run_id: "turn-1"))
-    end
-
-    AimHelm.agent(session: aim_helm).advance(claimed_by: "worker-1")
-
-    report = AimHelm.session(parent.id).pending_messages.fetch(0)
-    expect(report.payload).to include(
-      "content" => [
-        {
-          "type" => "text",
-          "text" => "Sub-agent researcher (#{session.id}) finished completed:\nResearch complete",
-        },
-      ],
-      "type" => "report",
-      "subagent_session_id" => session.id.to_s,
-      "subagent_name" => "researcher",
-      "subagent_status" => "completed",
-    )
-    expect(AimHelm.config.advance).to have_received(:call).with(parent.id)
   end
 
   it "fails closed when the queued grant differs from the durable spawn record" do

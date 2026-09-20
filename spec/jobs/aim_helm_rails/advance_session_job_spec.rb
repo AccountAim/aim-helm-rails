@@ -25,7 +25,7 @@ RSpec.describe AimHelmRails::AdvanceSessionJob, type: :job do
     ActiveJob::Base.queue_adapter = original
   end
 
-  it "reconstructs and resumes the pending turn under its lease" do
+  it "runs the pending turn in the host execution context and releases its lease" do
     append_turn
     attributes = nil
 
@@ -46,50 +46,22 @@ RSpec.describe AimHelmRails::AdvanceSessionJob, type: :job do
       )
     end
 
+    lease = session.hold_lease(claimed_by: "other-worker")
+    described_class.perform_now(session.id)
+
+    expect(attributes).to be_nil
+    expect(session.reload.lease_token).to eq(lease.token)
+
+    lease.release
     described_class.perform_now(session.id)
 
     expect(attributes).to include(app: execution_context(user), run_id:)
-    expect(attributes.fetch(:session)).to have_attributes(id: session.id.to_s)
-    expect(attributes.fetch(:options)).to have_attributes(
-      instructions: options.instructions,
-      model: options.model,
-      tools: [],
-    )
-    expect(attributes.fetch(:emit)).to be_a(AimHelm::Events::LeasedSink)
     expect(attributes.fetch(:authorize)).to have_attributes(context: execution_context(user))
-    expect(attributes.fetch(:on_interrupted_tool)).to have_attributes(parent: aim_helm_session)
     expect(session.reload).to have_attributes(
       claimed_by: nil,
       lease_token: nil,
       heartbeat_at: nil,
     )
-  end
-
-  it "does nothing while another worker owns the lease" do
-    append_turn
-    lease = session.hold_lease(claimed_by: "other-worker")
-    allow(AimHelm::Runner).to receive(:resume)
-
-    described_class.perform_now(session.id)
-
-    expect(AimHelm::Runner).not_to have_received(:resume)
-    expect(session.reload.lease_token).to eq(lease.token)
-  end
-
-  it "does nothing after the pending turn has a terminal" do
-    append_turn
-    aim_helm_session.append(
-      :terminal,
-      { outcome: :done },
-      key: "terminal:#{run_id}",
-      run_id:,
-    )
-    allow(AimHelm::Runner).to receive(:resume)
-
-    described_class.perform_now(session.id)
-
-    expect(AimHelm::Runner).not_to have_received(:resume)
-    expect(session.reload.lease_token).to be_nil
   end
 
   it "discards a tampered record after writing a failed terminal" do

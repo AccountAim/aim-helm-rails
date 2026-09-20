@@ -6,7 +6,7 @@ module AimHelmRails
       # back answered.
       def run(session, prompt, actor: session.actor, tenant: session.tenant)
         authorize!(session, actor:, tenant:, action: :update)
-        definition = definition_for(session)
+        definition = with_registered_tools(session.chat_key.agent)
         aim_helm_session = AimHelm.session(session.id)
 
         session.with_lock do
@@ -73,10 +73,6 @@ module AimHelmRails
       end
 
       private
-
-      def definition_for(session)
-        with_registered_tools(session.options.agent)
-      end
 
       def bind_actor!(session, actor, aim_helm_session)
         # Prime under the lock so the broadcaster thread never queries.

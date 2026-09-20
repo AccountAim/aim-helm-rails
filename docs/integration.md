@@ -27,9 +27,9 @@ The integration implements these class methods:
 | --- | --- |
 | `tools` | Registry implementing `resolve`, `identifiers`, and `register`; normally a subclass of `AimHelmRails::Tool`. |
 | `helmsman(name)` | Helmsman definition for execution, exposing `agent`. |
-| `chat_options` | Composer choices as `{ key:, label: }` hashes, one of them `selected: true`. See [Chat options](#chat-options). |
+| `chat_options` | Composer choices as `{ key:, label:, selected: }` hashes, at least one. See [Chat options](#chat-options). |
 | `sessions(actor:, tenant:)` | Authorized interactive-session relation; the engine also applies the tenant scope. |
-| `open_chat(actor:, tenant:, id:, options:, context:)` | Persist an interactive session with `helmsman: options.key`; raise when `options` is not one this host allows. `context` is an optional opaque host reference. Called inside the first-message transaction. |
+| `open_chat(actor:, tenant:, id:, key:, context:)` | Persist an interactive session with `helmsman: key.to_s`; raise when `key` is not one this host allows. `context` is an optional opaque host reference. Called inside the first-message transaction. |
 | `authorize!(record, actor:, tenant:, action:)` | Raise when access to a persisted record is denied. Engine calls use `read` and `update`. |
 | `authorize_upload!(actor:, tenant:)` | Authorize creating staged uploads in the supplied tenant. |
 | `session_path(session)` | Host navigation destination announced when a chat is created. |
@@ -38,21 +38,15 @@ The integration implements these class methods:
 
 ### Chat options
 
-A chat runs on what its key says. A key is a helmsman name, `analyst`, which runs that helmsman as
-declared, or `helmsman:model/reasoning`, `analyst:gpt-5.6-terra/low`, which overrides its model
-and reasoning effort. The key is stored in the session's `helmsman` column; a bare name there from
-before keys existed still works.
+A key names what a chat runs on: `analyst` is that helmsman as declared, and
+`analyst:gpt-5.6-terra/low` overrides its model and reasoning effort. It is stored in the session's
+`helmsman` column, so a bare helmsman name is a valid key.
 
-`chat_options` lists the keys the composer offers, with a label each and `selected: true` on the
-one to start on, else the first. A chat built with a key already in `helmsman`, as a page does to
-open a chat on a particular helmsman, is pinned to it and shows a label instead.
-
-The first message posts the chosen key. `open_chat` receives it parsed, as an
-`AimHelmRails::ChatOptions` exposing `key`, `helmsman`, `model`, and `reasoning`. The host decides
-what it allows: raise for a helmsman, model, or effort it does not offer.
-
-A helmsman's name is its stored identity: sessions and run records carry it, and the registry
-resolves it on every turn. Keep it stable across class renames by overriding `helmsman_name`.
+`chat_options` returns `{ key:, label:, selected: }` hashes, at least one. The composer starts on
+the `selected:` one, else the first, and shows a label instead of a choice when the chat already
+has a key. The first message posts the chosen key; `open_chat` receives it as an
+`AimHelmRails::ChatKey` exposing `helmsman`, `model`, `reasoning`, and `to_s`, and raises for one
+this host does not allow.
 
 Authorization is host policy, including sharing. Ownership does not imply private-chat policy.
 Session and attachment lookups enforce the supplied tenant independently. The host verifies the
@@ -194,7 +188,8 @@ selected organization. A collaborator can start a later turn, but must wait for 
 run to finish before sending input under a different grant.
 
 Concrete tools inherit `AimHelmRails::Tool`; helmsmen inherit `AimHelmRails::Helmsman`, named by
-their class path underscored, so `Subagents::KnowledgeBase` is `subagents/knowledge_base`. Durable
+their class path underscored, so `Subagents::KnowledgeBase` is `subagents/knowledge_base`. The name
+is stored identity: keep it across class renames by overriding `helmsman_name`. Durable
 records contain registered tool identifiers, resolved by workers before execution.
 Tools expose `execution`, `actor`, and `tenant` readers for that persisted execution context.
 `AimHelmRails::Runtime.decide(session:, call_id:, verdict:, actor:, tenant:, always_allow:)`

@@ -243,7 +243,7 @@ const Transcript = {
 
 // Vue owns the chat page itself: the server-rendered markup inside the mount element is this
 // component's template, so the page paints as Rails HTML and stays reactive from the mount on.
-const ChatRoot = ({ autosubmit, context, draft, events, options, pane: pinned, path, runs, session, uploadPath }) => ({
+const ChatRoot = ({ autosubmit, choices, context, draft, events, pane: pinned, path, runs, session, uploadPath }) => ({
   setup() {
     const store = createChatStore(session)
     const pane = useContextPane(pinned)
@@ -257,9 +257,9 @@ const ChatRoot = ({ autosubmit, context, draft, events, options, pane: pinned, p
       if (store.apply(event)) scroll.follow(event.name)
     }
 
-    const chosen = ref(options.find((choice) => choice.selected) || options[0])
-    // The first post fixes the choice, if there was one to make.
-    const chosenFixed = computed(() => Boolean(session.value) || options.length < 2)
+    const chosen = ref(choices.find((choice) => choice.selected) || choices[0])
+    // A created chat, or a single choice, leaves nothing to pick.
+    const chosenFixed = computed(() => Boolean(session.value) || choices.length < 2)
     const pin = (payload) => pane.open(payload, "auto")
     const transport = useChatTransport({ chosen, context, events, path, pin, receive, session, store })
     const attachments = useAttachments(uploadPath)
@@ -277,9 +277,9 @@ const ChatRoot = ({ autosubmit, context, draft, events, options, pane: pinned, p
       contextRevision: pane.revision,
       contextSrc: pane.src,
       contextTitle: pane.title,
+      choices,
       chosen,
       chosenFixed,
-      options,
       sessionId: session,
     }
   },
@@ -292,15 +292,15 @@ const ChatRoot = ({ autosubmit, context, draft, events, options, pane: pinned, p
   },
 })
 
-export const mountChat = (config) => {
-  const app = createApp(ChatRoot({ ...config, session: ref(config.sessionId) }))
+export const mountChat = (options) => {
+  const app = createApp(ChatRoot({ ...options, session: ref(options.sessionId) }))
   app.config.compilerOptions.isCustomElement = (tag) => tag === "turbo-frame"
   Object.entries({ AttachmentQueue, Log, LogRow, Run, Subagent, TextBlock, Transcript, Turn, Usage }).forEach(
     ([name, component]) => {
       app.component(name, component)
     },
   )
-  app.mount(config.root)
+  app.mount(options.root)
 
   return { unmount: () => app.unmount() }
 }

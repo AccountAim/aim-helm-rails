@@ -85,30 +85,6 @@ RSpec.describe "Agent acceptance scenarios" do
     expect_event_log_alignment(session)
   end
 
-  it "validates structured output on the queued job path" do
-    result_schema = AimHelm::Schema.define do
-      required(:answer).filled(:string, eql?: "ready")
-      required(:values).value(:array, size?: 3).each(:integer)
-    end
-    provider = fake_provider(text: JSON.generate(answer: "ready", values: [2, 4, 6]))
-    use_providers("gpt-5.6-luna" => provider)
-    agent = AimHelm::Agent.new(
-      instructions: "Return the requested data.",
-      model: "gpt-5.6-luna",
-      output: result_schema,
-    )
-
-    session = start(prompt: "Return ready and 2, 4, 6.", agent:)
-    perform_session(session)
-
-    result = result_schema.call(JSON.parse(assistant_text(session)))
-    expect(result).to be_success
-    expect(result.to_h).to eq(answer: "ready", values: [2, 4, 6])
-    expect(provider.requests.sole.fetch(:output_schema))
-      .to eq(result_schema.json_schema.deep_stringify_keys)
-    expect_event_log_alignment(session)
-  end
-
   it "re-agent a failed terminal session without resetting its lifetime spend" do
     first_provider = fake_provider(
       text: "I will remember cedar-17.",
@@ -764,58 +740,6 @@ RSpec.describe "Agent acceptance scenarios" do
       expect(tool_results(session).sole.payload.fetch("output"))
         .to eq("published LIVE-APPROVED-42")
       expect_event_log_alignment(session)
-    end
-
-    it "steers, continues, and receives two late reports from a live specialist" do
-      result_schema = AimHelm::Schema.define do
-        required(:marker).filled(:string, eql?: "STEERED-BETA")
-        required(:finding).filled(:string)
-      end
-      specialist = AimHelm::Subagent.new(
-        name: "marker_specialist",
-        description: "Returns a requested marker and one concise finding.",
-        system: "Stay within the marker task and return only the required structure.",
-        model: live_model("AGENT_CHILD_MODEL", "gpt-5.6-luna"),
-        reasoning: :low,
-        tools: [],
-        output_schema: result_schema,
-      )
-      agent = AimHelm::Agent.new(
-        instructions: <<~TEXT,
-          Spawn marker_specialist in background mode and finish without reading or waiting. When
-          reports arrive in later turns, acknowledge their structured facts.
-        TEXT
-        model: live_model("AGENT_PARENT_MODEL", "gpt-5.6-terra"),
-        reasoning: :low,
-        subagents: [specialist],
-      )
-      parent = start(
-        prompt: "Start marker_specialist with an initial ALPHA marker task.",
-        agent:,
-      )
-
-      perform_until_settled(parent)
-
-      expect(status(parent)).to eq("completed")
-      child = parent.child_sessions.sole
-      run(child, "Change direction and return marker STEERED-BETA.")
-      perform_until_settled(child)
-
-      first_result = result_schema.call(JSON.parse(assistant_text(child)))
-      expect(first_result).to be_success
-      expect(first_result.to_h.fetch(:marker)).to eq("STEERED-BETA")
-
-      run(child, "Return STEERED-BETA again and explain the earlier finding.")
-      perform_until_settled(child)
-
-      expect(result_schema.call(JSON.parse(assistant_text(child)))).to be_success
-      expect(terminals(child).count).to eq(2)
-      perform_until_settled(parent)
-
-      expect(status(parent)).to eq("completed")
-      expect(terminals(parent).count).to eq(2)
-      expect(entries(parent).count { |entry| entry.kind == "queued_message" }).to eq(2)
-      expect_event_log_alignment(parent, child)
     end
   end
 

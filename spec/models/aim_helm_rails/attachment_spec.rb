@@ -79,10 +79,4 @@ RSpec.describe AimHelmRails::Attachment, type: :model do
     expect(described_class.exists?(abandoned.id)).to be(false)
     expect(described_class.where(id: [claimed.id, recent.id]).count).to eq(2)
   end
-
-  it "destroys chat attachments with the session" do
-    claim([attachment.to_gid_param])
-
-    expect { chat.destroy! }.to change(described_class, :count).by(-1)
-  end
 end

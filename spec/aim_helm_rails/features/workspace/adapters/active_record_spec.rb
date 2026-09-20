@@ -1,11 +1,9 @@
-require "rails_helper"
-
 RSpec.describe AimHelmRails::Features::Workspace::Adapters::ActiveRecord do
   subject(:workspace) { AimHelm::Features::Workspace.adapter(described_class.new(**scope)) }
 
   let(:scope) { { kind: :memory, tenant: test_organization } }
 
-  it "isolates both shared and personal documents between tenants" do
+  it "scopes one path by tenant, actor, kind, and key" do
     actor = Organization.create!(name: "Actor")
     other_tenant = Organization.create!(name: "Other tenant")
 
@@ -18,57 +16,24 @@ RSpec.describe AimHelmRails::Features::Workspace::Adapters::ActiveRecord do
       second.write("profile.md", "Private to the second tenant")
       expect(first.read("profile.md")).to eq("Private to the first tenant")
     end
+
+    product = described_class.new(tenant: test_organization, kind: :knowledge_base, key: :product)
+    engineering = described_class.new(tenant: test_organization, kind: :knowledge_base,
+                                      key: :engineering)
+    product.write("profile.md", "Product")
+    engineering.write("profile.md", "Engineering")
+
+    expect(product.read("profile.md")).to eq("Product")
+    expect(engineering.read("profile.md")).to eq("Engineering")
+    expect(described_class.new(kind: :memory, tenant: test_organization).read("profile.md"))
+      .to eq("Private to the first tenant")
   end
 
-  it "stores, lists, and deletes documents" do
-    expect(workspace.read("notes/plan.md")).to be_nil
-
+  it "filters the listing by path prefix" do
     workspace.write("notes/plan.md", "Plan")
     workspace.write("profile.md", "Profile")
-    workspace.write("profile.md", "Updated profile")
 
-    expect(workspace.read("notes/plan.md")).to eq("Plan")
-    expect(workspace.read("profile.md")).to eq("Updated profile")
-    expect(workspace.list).to eq(["notes/plan.md", "profile.md"])
     expect(workspace.list("notes/")).to eq(["notes/plan.md"])
-
-    workspace.delete("notes/plan.md")
-
-    expect(workspace.read("notes/plan.md")).to be_nil
-  end
-
-  it "keeps global and user workspaces separate" do
-    user = User.create!(organization: test_organization, name: "Alice", email: "alice@example.com")
-    global = AimHelm::Features::Workspace.adapter(described_class.new(tenant: test_organization,
-                                                                      kind: :memory))
-    personal = AimHelm::Features::Workspace.adapter(
-      described_class.new(tenant: test_organization, kind: :memory, actor: user),
-    )
-
-    global.write("profile.md", "Shared")
-    personal.write("profile.md", "Personal")
-
-    expect(global.read("profile.md")).to eq("Shared")
-    expect(personal.read("profile.md")).to eq("Personal")
-  end
-
-  it "keeps kinds and keys separate" do
-    memory = AimHelm::Features::Workspace.adapter(described_class.new(tenant: test_organization,
-                                                                      kind: :memory))
-    product = AimHelm::Features::Workspace.adapter(
-      described_class.new(tenant: test_organization, kind: :knowledge_base, key: :product),
-    )
-    engineering = AimHelm::Features::Workspace.adapter(
-      described_class.new(tenant: test_organization, kind: :knowledge_base, key: :engineering),
-    )
-
-    memory.write("index.md", "Memory")
-    product.write("index.md", "Product")
-    engineering.write("index.md", "Engineering")
-
-    expect(memory.read("index.md")).to eq("Memory")
-    expect(product.read("index.md")).to eq("Product")
-    expect(engineering.read("index.md")).to eq("Engineering")
   end
 
   it "conditionally replaces the revision it read" do

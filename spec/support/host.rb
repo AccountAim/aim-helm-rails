@@ -4,7 +4,6 @@ module AimHelmRailsSpec
 
     def tools = AimHelmRails::Tool
     def helmsman(name) = raise(KeyError, name)
-    def chat_options = []
     def resource_path(gid, frame:) = "/host/resources/#{gid}?frame=#{frame}"
 
     def authorize!(record, actor:, tenant:, action:)

@@ -3,7 +3,7 @@
      nothing of the page around it. When its first message creates the chat it announces
      `agent:chat-created` with the path; the page decides what to do with its address. -->
 <% routes = AimHelmRails::Engine.routes.url_helpers %>
-<% options = aim_helm_rails_chat_options(chat) %>
+<% choices = aim_helm_rails_chat_choices(chat) %>
 <!-- The first post creates the chat, with what it was opened on. -->
 <% path = routes.chat_messages_path(chat.id, context: chat.new_record? ? context : nil) %>
 
@@ -18,7 +18,7 @@
      data-aim-helm-rails--chat-autosubmit-value="<%= autosubmit %>"
      data-aim-helm-rails--chat-pane-value="<%= pane.to_json %>"
      data-aim-helm-rails--chat-draft-value="<%= draft %>"
-     data-aim-helm-rails--chat-options-value="<%= options.to_json %>"
+     data-aim-helm-rails--chat-choices-value="<%= choices.to_json %>"
      data-aim-helm-rails--chat-path-value="<%= path %>"
      data-aim-helm-rails--chat-session-id-value="<%= chat.id if chat.persisted? %>"
      data-aim-helm-rails--chat-context-value="<%= context.present? %>"
@@ -100,12 +100,12 @@
             <%= lucide_icon "paperclip", class: "size-5" %>
           </label>
           <div class="ml-auto flex min-w-0 items-center gap-2">
-            <% if options.many? %>
+            <% if choices.many? %>
               <!-- The first post fixes the choice; from then on it reads as a label. -->
               <select v-if="!chosenFixed" v-model="chosen" aria-label="Chat options"
                       class="min-w-0 max-w-48 rounded-lg border-0 bg-transparent px-2 py-1 text-sm text-muted-foreground
                              outline-none focus:ring-0">
-                <option v-for="choice in options" :key="choice.key" :value="choice" v-text="choice.label"></option>
+                <option v-for="choice in choices" :key="choice.key" :value="choice" v-text="choice.label"></option>
               </select>
             <% end %>
             <span v-if="chosenFixed" class="mr-2 min-w-0 max-w-48 truncate text-sm text-muted-foreground"

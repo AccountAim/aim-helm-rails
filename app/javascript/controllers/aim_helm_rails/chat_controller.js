@@ -7,10 +7,10 @@ export default class extends Controller {
   static targets = ["events", "island"]
   static values = {
     autosubmit: Boolean,
+    choices: Array,
     context: Boolean,
     draft: String,
     history: Array,
-    options: Array,
     pane: Object,
     path: String,
     sessionId: String,
@@ -21,11 +21,11 @@ export default class extends Controller {
     this.chat = import("aim_helm_rails/chat/app").then(({ mountChat }) =>
       mountChat({
         autosubmit: this.autosubmitValue,
+        choices: this.choicesValue,
         context: this.contextValue,
         pane: this.paneValue,
         draft: this.draftValue,
         events: this.eventsTarget,
-        options: this.optionsValue,
         path: this.pathValue,
         root: this.islandTarget,
         runs: this.historyValue,
