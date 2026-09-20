@@ -1,7 +1,6 @@
 module AimHelmRails
-  # Helmsman declarations. Subclasses declare model/instructions/tools and
-  # identity derives from the class name — Researcher is the agent named "researcher" — so
-  # the file is its single source. agent assembles the AimHelm agent.
+  # Helmsman declarations: subclasses declare model/instructions/tools; the name is the class path
+  # underscored — Subagents::Researcher is "subagents/researcher".
   class Helmsman
     COMPACTION_MODEL = ENV.fetch("COMPACTION_MODEL", "gpt-5.6-luna").freeze
     COMPACT_AFTER_TOKENS = ENV.fetch("COMPACT_AFTER_TOKENS", 250_000).to_i
@@ -72,7 +71,7 @@ module AimHelmRails
         text.to_s.strip
       end
 
-      def helmsman_name = name.demodulize.underscore
+      def helmsman_name = name.underscore
       def helmsman_advance_mode = nil
       def helmsman_description = nil
       def helmsman_max_turns = 20

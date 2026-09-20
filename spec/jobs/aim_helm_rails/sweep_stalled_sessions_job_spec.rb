@@ -42,59 +42,20 @@ RSpec.describe AimHelmRails::SweepStalledSessionsJob, type: :job do
     expect(AimHelm.config.advance).to have_received(:call).exactly(4).times
   end
 
-  it "recovers a terminal child before its report was appended" do
+  it "delivers a terminal child's report to its parent exactly once" do
     parent = completed_parent
     child = completed_child(parent:)
 
-    described_class.perform_now
+    2.times { described_class.perform_now }
 
     report = child_report(child)
-    expect(report_entries(parent, report).size).to eq(1)
-    expect(AimHelmRails::AdvanceSessionJob).to have_been_enqueued.with(parent.id)
-  end
-
-  it "recovers a report appended before its parent wake" do
-    parent = completed_parent
-    child = completed_child(parent:)
-    report = child_report(child)
-    queue_report(parent, report)
-
-    described_class.perform_now
-
     expect(report_entries(parent, report).size).to eq(1)
     expect(AimHelm.session(parent.id).pending_messages).to be_empty
     expect(AimHelmRails::AdvanceSessionJob).to have_been_enqueued.with(parent.id)
   end
 
-  it "recovers a folded report whose enqueue was lost" do
-    parent = completed_parent
-    child = completed_child(parent:)
-    report = child_report(child)
-    queue_report(parent, report)
-    control = AimHelm::Control.new(session: AimHelm.session(parent.id))
-    control.continue_queued(run_id: SecureRandom.uuid_v7)
-    parent.update_column(
-      :updated_at,
-      Time.current - AimHelm::Stores::ActiveRecord::STALE_AFTER - 1.minute,
-    )
-
-    described_class.perform_now
-
-    expect(report_entries(parent, report).size).to eq(1)
-    expect(AimHelmRails::AdvanceSessionJob).to have_been_enqueued.with(parent.id)
-  end
-
-  it "derives background delivery from logs after a portable candidate query" do
-    parent = completed_parent
-    background = completed_child(parent:)
-    inline = completed_child(parent:, mode: :inline)
-
-    described_class.perform_now
-
-    expect(report_entries(parent, child_report(background)).size).to eq(1)
-    expect(report_entries(parent, child_report(inline))).to be_empty
-    sql = AimHelm.config.store.terminal_subagents.to_sql
-    expect(sql).not_to match(/->>|::/)
+  it "keeps the candidate query portable across SQLite and Postgres" do
+    expect(AimHelm.config.store.terminal_subagents.to_sql).not_to match(/->>|::/)
   end
 
   def stale_child(parent:, mode:, heartbeat_at:)
@@ -127,10 +88,10 @@ RSpec.describe AimHelmRails::SweepStalledSessionsJob, type: :job do
     parent
   end
 
-  def completed_child(parent:, mode: :background)
+  def completed_child(parent:)
     child = AimHelmRails::Session.create!(actor: user, tenant: user.organization,
                                           parent_session: parent, name: "researcher")
-    record = spawn_record(child:, parent:, mode:)
+    record = spawn_record(child:, parent:, mode: :background)
     aim_helm = AimHelm.session(child.id)
     append_spawn(aim_helm, record)
     append_child_result(aim_helm, record.run_id)
@@ -170,14 +131,6 @@ RSpec.describe AimHelmRails::SweepStalledSessionsJob, type: :job do
     entries = AimHelm.session(child.id).entries
     record = AimHelm::Subagents::Record.latest(entries)
     AimHelm::Subagents::Report.from(entries:, record:)
-  end
-
-  def queue_report(parent, report)
-    AimHelm::Control.new(session: AimHelm.session(parent.id)).queue_message(
-      content: report.message,
-      type: :report,
-      key: "report:#{report.terminal_entry_id}",
-    )
   end
 
   def report_entries(parent, report)

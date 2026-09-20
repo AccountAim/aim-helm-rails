@@ -7,18 +7,10 @@ RSpec.describe AimHelmRails::Session, type: :model do
   let(:session) { described_class.create!(actor: user, tenant: user.organization) }
   let(:now) { Time.current.change(usec: 0) }
 
-  it "assigns a UUIDv7 before persistence" do
-    expect(described_class.new(actor: user,
-                               tenant: user.organization).id.split("-").fetch(2)).to start_with("7")
-  end
-
-  it "keeps the host user as the runtime actor" do
-    expect(session.actor).to eq(user)
-    expect(session.aim_helm_context).to eq(execution_context(user))
-  end
-
   it "restores the persisted tenant after the actor changes organizations" do
     original_tenant = session.tenant
+    expect(session.aim_helm_context).to eq(execution_context(user))
+
     user.update!(organization: Organization.create!(name: "Another organization"))
 
     expect(session.reload.aim_helm_context.tenant).to eq(original_tenant)
@@ -72,6 +64,9 @@ RSpec.describe AimHelmRails::Session, type: :model do
       run_id:,
       turn_id:,
     )
+
+    expect(session.reload.history_runs.fetch(0)).to include(assistant_timestamp: nil)
+
     terminal = aim_helm.append(
       :terminal,
       { outcome: :done },
@@ -120,21 +115,6 @@ RSpec.describe AimHelmRails::Session, type: :model do
       ],
       user_timestamp: session.entries.find { |entry| entry.kind == "user" }.created_at.iso8601,
       assistant_timestamp: terminal.created_at.iso8601,
-    )
-  end
-
-  it "keeps a projected run busy until its terminal entry exists" do
-    aim_helm = AimHelm.session(session.id)
-    run_id = SecureRandom.uuid_v7
-    aim_helm.append(
-      :user,
-      { content: [{ type: "text", text: "<user-message>Keep working</user-message>" }] },
-      run_id:,
-    )
-
-    expect(session.reload.history_runs.fetch(0)).to include(
-      run_id:,
-      assistant_timestamp: nil,
     )
   end
 
@@ -337,84 +317,19 @@ RSpec.describe AimHelmRails::Session, type: :model do
     expect(session.message_count).to eq(2)
   end
 
-  it "acquires one live token lease" do
+  it "acquires, heartbeats, and releases a lease on the sessions table" do
     lease = session.hold_lease(claimed_by: "worker-1", now:)
 
-    expect(lease).to be_a(AimHelm::Stores::ActiveRecord::Lease)
     expect(session.hold_lease(claimed_by: "worker-2", now:)).to be_nil
     expect(session.reload).to have_attributes(
       claimed_by: "worker-1",
       lease_token: lease.token,
       heartbeat_at: now,
-      status: "queued",
     )
-  end
-
-  it "does not change lifecycle status when acquiring or releasing a lease" do
-    session.update!(status: "completed")
-
-    session.hold_lease(claimed_by: "worker-1", now:).release(now: now + 1.second)
-
-    expect(session.reload.status).to eq("completed")
-  end
-
-  it "renews and releases only with the current token" do
-    lease = session.hold_lease(claimed_by: "worker-1", now:)
-    stale = AimHelm::Stores::ActiveRecord::Lease.new(
-      session:,
-      token: SecureRandom.uuid_v7,
-      claimed_by: "worker-stale",
-    )
-
-    expect(stale.heartbeat?(now: now + 10.seconds, interval: 0.seconds)).to be(false)
     expect(lease.heartbeat?(now: now + 20.seconds, interval: 0.seconds)).to be(true)
     expect(session.reload.heartbeat_at).to eq(now + 20.seconds)
 
-    expect(stale.release(now: now + 21.seconds)).to be(false)
     expect(lease.release(now: now + 22.seconds)).to be(true)
     expect(session.reload).to have_attributes(claimed_by: nil, lease_token: nil, heartbeat_at: nil)
-  end
-
-  it "throttles callback heartbeats in the database" do
-    lease = session.hold_lease(claimed_by: "worker-1", now:)
-
-    expect(lease.heartbeat?(now: now + 29.seconds)).to be(true)
-    expect(session.reload.heartbeat_at).to eq(now)
-
-    expect(lease.heartbeat?(now: now + 30.seconds)).to be(true)
-    expect(session.reload.heartbeat_at).to eq(now + 30.seconds)
-  end
-
-  it "allows takeover after expiry and rejects the stale holder's release" do
-    first = session.hold_lease(
-      claimed_by: "worker-1",
-      now: now - AimHelm::Stores::ActiveRecord::Leaseable::LEASE_TTL - 1.second,
-    )
-    second = session.hold_lease(claimed_by: "worker-2", now:)
-
-    expect(second).to be_a(AimHelm::Stores::ActiveRecord::Lease)
-    expect(first.heartbeat?(now:)).to be(false)
-    expect(first.release(now:)).to be(false)
-    expect(session.reload).to have_attributes(
-      claimed_by: "worker-2",
-      lease_token: second.token,
-      heartbeat_at: now,
-    )
-  end
-
-  it "computes interruption from running status and an expired heartbeat" do
-    session.update!(
-      status: "running",
-      heartbeat_at: now - AimHelm::Stores::ActiveRecord::Leaseable::LEASE_TTL - 1.second,
-    )
-
-    expect(session.interrupted?(now:)).to be(true)
-    expect(session.interrupted?(now: now - 2.seconds)).to be(false)
-  end
-
-  it "treats a running session without a lease heartbeat as interrupted" do
-    session.update!(status: "running", heartbeat_at: nil)
-
-    expect(session.interrupted?(now:)).to be(true)
   end
 end

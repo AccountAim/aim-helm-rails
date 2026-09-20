@@ -14,18 +14,13 @@ module AimHelmRails
       end
     end
 
-    # [{ name: "analyst", label: "Analyst", description: "Answers…", setup: "terra/low" }, …]
-    def aim_helm_rails_helmsmen(chat)
-      AimHelmRails.host.interactive_helmsmen_for(chat).map do
-        { name: it.helmsman_name, label: it.helmsman_name.humanize,
-          description: it.helmsman_description, setup: aim_helm_rails_setup_label(chat, it) }
-      end
-    end
+    # The host's list, or the one key a chat was opened on.
+    def aim_helm_rails_chat_choices(chat)
+      offered = AimHelmRails.host.chat_options
+      key = chat.helmsman
+      return offered unless key
 
-    def aim_helm_rails_setup_label(chat, helmsman)
-      setup = chat.setup.presence || { model: helmsman.helmsman_model,
-                                       reasoning: helmsman.helmsman_reasoning }
-      "#{setup.fetch(:model).split("-").last}/#{setup[:reasoning]}"
+      [offered.find { it[:key] == key } || { key:, label: key }]
     end
   end
 end

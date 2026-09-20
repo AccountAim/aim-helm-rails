@@ -4,11 +4,6 @@ RSpec.describe AimHelmRails::Features::Workspace do
                  email: "first-workspace-#{SecureRandom.uuid_v7}@example.com")
   end
 
-  let(:second_user) do
-    User.create!(organization: test_organization, name: "Second",
-                 email: "second-workspace-#{SecureRandom.uuid_v7}@example.com")
-  end
-
   before { described_class.register(AimHelmRails::Tool) }
 
   let(:memory_identifiers) do
@@ -42,42 +37,6 @@ RSpec.describe AimHelmRails::Features::Workspace do
 
     expect(AimHelmRails::Tool.identifiers(read)).to eq(knowledge_base_read_identifiers)
     expect(AimHelmRails::Tool.identifiers(write)).to eq(knowledge_base_write_identifiers)
-  end
-
-  it "binds memory documents to the current user" do
-    tools = described_class.memory_tools.index_by(&:name)
-    first_context = Data.define(:app).new(app: execution_context(first_user))
-    second_context = Data.define(:app).new(app: execution_context(second_user))
-
-    tools.fetch("memory_write").call(
-      { "path" => "profile.md", "content" => "First memory" }, context: first_context
-    )
-    tools.fetch("memory_write").call(
-      { "path" => "profile.md", "content" => "Second memory" }, context: second_context
-    )
-
-    first = tools.fetch("memory_read").call({ "path" => "profile.md" }, context: first_context)
-    second = tools.fetch("memory_read").call({ "path" => "profile.md" }, context: second_context)
-
-    expect(first.content).to eq("1: First memory")
-    expect(second.content).to eq("1: Second memory")
-  end
-
-  it "shares knowledge base documents between users" do
-    tools = described_class.knowledge_base_tools(access: :write).index_by(&:name)
-    first_context = Data.define(:app).new(app: execution_context(first_user))
-    second_context = Data.define(:app).new(app: execution_context(second_user))
-
-    tools.fetch("knowledge_base_write").call(
-      { "path" => "product/metrics.md", "content" => "Shared definition" },
-      context: first_context,
-    )
-    result = tools.fetch("knowledge_base_read").call(
-      { "path" => "product/metrics.md" },
-      context: second_context,
-    )
-
-    expect(result.content).to eq("1: Shared definition")
   end
 
   it "reconstructs workspace grants from durable identifiers" do

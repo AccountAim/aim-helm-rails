@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe AimHelm::Events::Subscribers do
+RSpec.describe AimHelmRails::HelmIntegration do
   let(:user) do
     User.create!(organization: test_organization, name: "Events User",
                  email: "events-#{SecureRandom.uuid_v7}@example.com")
@@ -13,20 +13,6 @@ RSpec.describe AimHelm::Events::Subscribers do
     AimHelm::Event.build(type: :"run.queued").with(session_id: session.id, run_id: "run-1")
   end
 
-  it "delivers the foreground event before the typed process broadcast" do
-    calls = []
-    foreground = ->(value) { calls << [:foreground, value] }
-    broadcast = ->(delivery) { calls << [:broadcast, delivery] }
-    subscribers = described_class.new(session:, context: execution_context(user), foreground:,
-                                      broadcast:)
-
-    subscribers.call(event)
-
-    expect(calls.map(&:first)).to eq(%i[foreground broadcast])
-    expect(calls.first.last).to equal(event)
-    expect(calls.last.last).to have_attributes(event:, session:, context: execution_context(user))
-  end
-
   it "leaves Turbo Stream delivery and failure policy in the engine callback" do
     delivery = AimHelmRails::HelmIntegration::StreamedDelivery.new(
       event:, session:, context: execution_context(user), stream: "agent:#{record.id}",
@@ -35,7 +21,7 @@ RSpec.describe AimHelm::Events::Subscribers do
     allow(Turbo::StreamsChannel).to receive(:broadcast_append_to).and_raise(error)
     allow(Rails.error).to receive(:report)
 
-    expect { AimHelmRails::HelmIntegration.broadcast(delivery) }.not_to raise_error
+    expect { described_class.broadcast(delivery) }.not_to raise_error
     expect(Rails.error).to have_received(:report).with(
       error,
       handled: true,
@@ -61,7 +47,7 @@ RSpec.describe AimHelm::Events::Subscribers do
     )
     allow(Turbo::StreamsChannel).to receive(:broadcast_append_to)
 
-    AimHelmRails::HelmIntegration.broadcast(delivery)
+    described_class.broadcast(delivery)
 
     expect(Turbo::StreamsChannel).to have_received(:broadcast_append_to).with(
       "agent:#{record.id}",

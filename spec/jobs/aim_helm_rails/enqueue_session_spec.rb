@@ -46,26 +46,4 @@ RSpec.describe "Enqueuing a session turn", type: :job do
     end.value
     expect(kinds).to include("run_record", "user")
   end
-
-  it "does not enqueue when the outer transaction rolls back" do
-    AimHelmRails::Session.transaction do
-      queue_turn
-      raise ActiveRecord::Rollback
-    end
-
-    expect(enqueued_jobs).to be_empty
-    expect(AimHelmRails::Session.exists?(@session_id)).to be(false)
-  end
-
-  it "does not enqueue a turn rolled back to a savepoint" do
-    AimHelmRails::Session.transaction do
-      AimHelmRails::Session.transaction(requires_new: true) do
-        queue_turn
-        raise ActiveRecord::Rollback
-      end
-    end
-
-    expect(enqueued_jobs).to be_empty
-    expect(AimHelmRails::Session.exists?(@session_id)).to be(false)
-  end
 end

@@ -20,6 +20,14 @@ RSpec.describe AimHelmRails::Runtime do
       .to eq(AimHelmRails::ExecutionContext.new(actor: collaborator, tenant:))
   end
 
+  it "runs the model and reasoning the chat's key carries" do
+    chat.update!(helmsman: "probe:gpt-5.6-terra/high")
+    described_class.run(chat, "Read the report", actor: owner, tenant:)
+
+    expect(chat.entries.where(kind: "run_record").sole.payload)
+      .to include("model" => "gpt-5.6-terra", "reasoning" => "high")
+  end
+
   it "does not change the execution grant while a turn is pending" do
     described_class.run(chat, "Read the report", actor: owner, tenant:)
 

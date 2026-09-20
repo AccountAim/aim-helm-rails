@@ -3,67 +3,48 @@ module AimHelmRails
     class MessagesController < ApplicationController
       def create
         Session.transaction do
-          @chat = sessions.find_by(id: params[:chat_id]) || open_chat
-          authorize_chat!
-          @attached = claim_attachments
+          host.authorize!(chat, actor: current_actor, tenant: current_tenant, action: :update)
           Runtime.run(chat, prompt, actor: current_actor, tenant: current_tenant) if message?
         end
 
-        bind_response
+        announce_chat
         head :no_content
       end
 
       private
 
-      # A chat's first post creates it. One opened on something starts with the agent looking at
-      # it, so its first post may carry nothing typed.
-      attr_reader :chat, :attached
+      def host = AimHelmRails.host
+
+      # The first post to a chat's id creates it here.
+      def chat = @chat ||= sessions.find_by(id: params[:chat_id]) || open_chat
+
+      def sessions
+        host.sessions(actor: current_actor, tenant: current_tenant).within(current_tenant)
+      end
 
       def open_chat
         raise ActiveRecord::RecordNotFound if Session.exists?(id: params[:chat_id])
 
-        AimHelmRails.host.open_chat(
-          actor: current_actor, tenant: current_tenant, id: params[:chat_id],
-          helmsman: helmsman_name, context: params[:context]
-        )
+        host.open_chat(actor: current_actor, tenant: current_tenant, id: params[:chat_id],
+                       key: ChatKey.new(message[:key]), context: params[:context])
       end
 
-      def helmsman_name
-        AimHelmRails.host.interactive_helmsman(message_params[:helmsman]).helmsman_name
+      # Claims on first read, inside the create transaction.
+      def attached
+        @attached ||= Attachment.claim!(Array(message[:attachments]),
+                                        session: chat, actor: current_actor, tenant: current_tenant)
       end
 
-      def authorize_chat!
-        AimHelmRails.host.authorize!(chat, actor: current_actor, tenant: current_tenant,
-                                           action: :update)
-      end
-
-      def claim_attachments
-        Attachment.claim!(Array(message_params[:attachments]), session: chat,
-                                                               actor: current_actor,
-                                                               tenant: current_tenant)
-      end
-
-      def sessions
-        AimHelmRails.host.sessions(actor: current_actor, tenant: current_tenant)
-                    .within(current_tenant)
-      end
-
-      def message? = message_params[:content].present? || attached.any?
+      def message = @message ||= params.expect(message: [:content, :key, { attachments: [] }])
+      def message? = message[:content].present? || attached.any?
 
       # Typed text travels tagged: the transcript shows only <user-message> content, so
-      # machine-authored blocks (signals, attachments) stay out of the bubbles by default.
+      # machine-authored blocks (signals, attachments) stay out of the bubbles.
       def prompt
-        typed = "<user-message>#{message_params[:content]}</user-message>"
-        Attachments.encode(typed, attached)
+        Attachments.encode("<user-message>#{message[:content]}</user-message>", attached)
       end
 
-      def message_params
-        @message_params ||= params.expect(message: [:content, :helmsman, { attachments: [] }])
-                                  .to_h.symbolize_keys
-      end
-
-      def bind_response
-        host = AimHelmRails.host
+      def announce_chat
         response.headers.merge!({
           "X-Agent-Session-Id" => chat.id,
           "X-Agent-Session-Path" => host.session_path(chat),

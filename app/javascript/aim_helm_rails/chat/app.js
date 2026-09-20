@@ -1,4 +1,4 @@
-import { createApp, provide, ref } from "vue"
+import { computed, createApp, provide, ref } from "vue"
 import { createChatStore } from "aim_helm_rails/chat/store"
 import { useAttachments } from "aim_helm_rails/chat/attachments"
 import { useComposer } from "aim_helm_rails/chat/composer"
@@ -100,7 +100,9 @@ const Subagent = {
     label() {
       const actions = this.runs.reduce((total, run) => total + runActions(run), 0)
       const working = this.runs.some((run) => run.status === "running") ? "working…" : null
-      return [this.child.name, actions ? plural(actions, "action") : working].filter(Boolean).join(" · ")
+      // A nested helmsman's name is a path; its last segment is the one to show.
+      const name = this.child.name.split("/").at(-1)
+      return [name, actions ? plural(actions, "action") : working].filter(Boolean).join(" · ")
     },
     task() {
       return taskText(this.child.task)
@@ -241,19 +243,7 @@ const Transcript = {
 
 // Vue owns the chat page itself: the server-rendered markup inside the mount element is this
 // component's template, so the page paints as Rails HTML and stays reactive from the mount on.
-const ChatRoot = ({
-  autosubmit,
-  context,
-  draft,
-  events,
-  helmsman: chosen,
-  helmsmen,
-  pane: pinned,
-  path,
-  runs,
-  session,
-  uploadPath,
-}) => ({
+const ChatRoot = ({ autosubmit, choices, context, draft, events, pane: pinned, path, runs, session, uploadPath }) => ({
   setup() {
     const store = createChatStore(session)
     const pane = useContextPane(pinned)
@@ -267,18 +257,13 @@ const ChatRoot = ({
       if (store.apply(event)) scroll.follow(event.name)
     }
 
-    const helmsman = ref(helmsmen.find((option) => option.name === chosen) || helmsmen[0])
-    // A chat keeps the helmsman it has; until then the first message picks one.
-    const helmsmanFixed = ref(Boolean(chosen))
+    const chosen = ref(choices.find((choice) => choice.selected) || choices[0])
+    // A created chat, or a single choice, leaves nothing to pick.
+    const chosenFixed = computed(() => Boolean(session.value) || choices.length < 2)
     const pin = (payload) => pane.open(payload, "auto")
-    const transport = useChatTransport({ context, events, helmsman, path, pin, receive, session, store })
+    const transport = useChatTransport({ chosen, context, events, path, pin, receive, session, store })
     const attachments = useAttachments(uploadPath)
-    const send = async (...args) => {
-      const sent = await transport.send(...args)
-      if (sent) helmsmanFixed.value = true
-      return sent
-    }
-    const composer = useComposer({ attachments, draft, send })
+    const composer = useComposer({ attachments, draft, send: transport.send })
 
     // Refs unwrap in the template only at the top level of what setup returns.
     return {
@@ -292,9 +277,9 @@ const ChatRoot = ({
       contextRevision: pane.revision,
       contextSrc: pane.src,
       contextTitle: pane.title,
-      helmsman,
-      helmsmanFixed,
-      helmsmen,
+      choices,
+      chosen,
+      chosenFixed,
       sessionId: session,
     }
   },
