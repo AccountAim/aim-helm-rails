@@ -50,7 +50,7 @@ module AimHelmRails
     def usage = AimHelm.session(id).usage
 
     # `helmsman` holds the chat's options key; see ChatOptions.
-    def options = ChatOptions.new(key: helmsman)
+    def options = ChatOptions.new(helmsman)
 
     private
 

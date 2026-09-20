@@ -100,7 +100,9 @@ const Subagent = {
     label() {
       const actions = this.runs.reduce((total, run) => total + runActions(run), 0)
       const working = this.runs.some((run) => run.status === "running") ? "working…" : null
-      return [this.child.name, actions ? plural(actions, "action") : working].filter(Boolean).join(" · ")
+      // A nested helmsman's name is a path; its last segment is the one to show.
+      const name = this.child.name.split("/").at(-1)
+      return [name, actions ? plural(actions, "action") : working].filter(Boolean).join(" · ")
     },
     task() {
       return taskText(this.child.task)

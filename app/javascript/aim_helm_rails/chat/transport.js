@@ -15,7 +15,7 @@ export const useChatTransport = ({ store, session, events, chosen, context, path
 
   const post = (message, attachments) => {
     const body = new URLSearchParams({ "message[content]": message })
-    if (!session.value && chosen.value) body.append("message[options]", chosen.value.key)
+    if (!session.value) body.append("message[key]", chosen.value.key)
     attachments.forEach(({ gid }) => body.append("message[attachments][]", gid))
 
     return fetch(path, {

@@ -14,7 +14,11 @@ module AimHelmRails
       end
     end
 
-    # [{ key: "analyst:gpt-5.6-terra/low", label: "Analyst, quick" }, …]
-    def aim_helm_rails_chat_options(chat) = ChatOptions.for(chat)
+    # The host's list, or the one key a chat was opened on.
+    def aim_helm_rails_chat_options(chat)
+      offered = AimHelmRails.host.chat_options
+      key = chat.helmsman
+      key ? [offered.find { it[:key] == key } || { key:, label: key }] : offered
+    end
   end
 end

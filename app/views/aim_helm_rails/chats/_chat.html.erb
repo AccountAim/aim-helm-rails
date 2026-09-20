@@ -108,10 +108,8 @@
                 <option v-for="choice in options" :key="choice.key" :value="choice" v-text="choice.label"></option>
               </select>
             <% end %>
-            <% if options.any? %>
-              <span v-if="chosenFixed" class="mr-2 min-w-0 max-w-48 truncate text-sm text-muted-foreground"
-                    v-text="chosen.label"></span>
-            <% end %>
+            <span v-if="chosenFixed" class="mr-2 min-w-0 max-w-48 truncate text-sm text-muted-foreground"
+                  v-text="chosen.label"></span>
             <button type="submit" aria-label="Send" :disabled="busy"
                     class="shrink-0 rounded-full border-0 p-2 text-primary-foreground shadow-sm shadow-primary/30
                            bg-primary hover:bg-primary/90 disabled:opacity-50">
