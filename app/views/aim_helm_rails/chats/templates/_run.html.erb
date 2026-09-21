@@ -11,7 +11,7 @@
                               leading-tight text-muted-foreground">{{ file.name }}</span>
         </a>
       </div>
-      <div v-if="run.message" class="rounded-2xl bg-primary px-5 py-3 text-primary-foreground shadow-sm">{{ run.message }}</div>
+      <div v-if="run.message" class="whitespace-pre-wrap break-words rounded-2xl bg-primary px-5 py-3 text-primary-foreground shadow-sm">{{ run.message }}</div>
       <time class="mt-2.5 block text-right text-xs text-muted-foreground">{{ stamp }}</time>
     </div>
     <div class="group/run flex flex-col" :class="nested ? 'mt-3' : 'mt-6'"
