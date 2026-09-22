@@ -28,12 +28,12 @@ RSpec.describe "AimHelmRails::Session usage", type: :model do
       { "id" => child.id, "name" => child.name },
       run_id:,
     )
-    append_assistant(child, model: "gpt-5.6-luna", input_tokens: 400, cost: 0.003)
+    append_assistant(child, model: "gpt-6-luna", input_tokens: 400, cost: 0.003)
 
     usage = session.usage
     expect(usage.steps.map(&:agent)).to eq([nil, "researcher"])
     expect(usage.total).to have_attributes(calls: 2, input: 500, cost: 0.004)
-    expect(usage.by_model.map(&:model)).to contain_exactly("gpt-5.6-terra", "gpt-5.6-luna")
+    expect(usage.by_model.map(&:model)).to contain_exactly("gpt-5.6-terra", "gpt-6-luna")
   end
 
   it "carries each provider call into the chat history" do

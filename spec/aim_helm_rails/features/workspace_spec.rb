@@ -45,7 +45,7 @@ RSpec.describe AimHelmRails::Features::Workspace do
                                             helmsman: "analyst")
 
     tools = described_class.memory_tools + described_class.knowledge_base_tools
-    definition = AimHelm.agent("gpt-5.6-luna", tools:)
+    definition = AimHelm.agent("gpt-6-luna", tools:)
     allow(AimHelmRails.host)
       .to receive(:helmsman).with("analyst").and_return(double(agent: definition))
     AimHelmRails::Runtime.run(session, "Remember my reporting preference")

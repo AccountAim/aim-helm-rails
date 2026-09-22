@@ -2,7 +2,7 @@ module AimHelmRails
   # Helmsman declarations: subclasses declare model/instructions/tools; the name is the class path
   # underscored — Subagents::Researcher is "subagents/researcher".
   class Helmsman
-    COMPACTION_MODEL = ENV.fetch("COMPACTION_MODEL", "gpt-5.6-luna").freeze
+    COMPACTION_MODEL = ENV.fetch("COMPACTION_MODEL", "gpt-6-luna").freeze
     COMPACT_AFTER_TOKENS = ENV.fetch("COMPACT_AFTER_TOKENS", 250_000).to_i
 
     class << self

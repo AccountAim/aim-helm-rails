@@ -172,7 +172,7 @@ integrating the engine.
 ## Execution and identities
 
 ```ruby
-chat = AimHelmRails::Session.create!(actor:, tenant:, helmsman: "analyst:gpt-5.6-sol/low",
+chat = AimHelmRails::Session.create!(actor:, tenant:, helmsman: "analyst:gpt-6-sol/low",
                                      interactive: true)
 AimHelmRails::Runtime.run(chat, "Summarize recent activity.", actor:, tenant:)
 AimHelmRails::Runtime.read(session: chat, actor:, tenant:)

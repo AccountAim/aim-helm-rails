@@ -59,7 +59,7 @@ RSpec.describe AimHelm::Stores::ActiveRecord::SubagentHost do
   def build_record(parent:, mode:)
     options = AimHelm::Agent::Record.new(
       system: "Research carefully.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
     )
     AimHelm::Subagents::Record.new(
       session_id: SecureRandom.uuid_v7, parent_session_id: parent.id,

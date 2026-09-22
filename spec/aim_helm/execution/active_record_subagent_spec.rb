@@ -21,7 +21,7 @@ RSpec.describe "Active Record subagent execution" do
       mode: :background,
       options: AimHelm::Agent::Record.new(
         system: "Research carefully.",
-        model: "gpt-5.6-luna",
+        model: "gpt-6-luna",
       ),
     )
   end
