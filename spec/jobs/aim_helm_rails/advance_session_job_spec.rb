@@ -11,7 +11,7 @@ RSpec.describe AimHelmRails::AdvanceSessionJob, type: :job do
   let(:run_id) { SecureRandom.uuid_v7 }
 
   let(:options) do
-    AimHelm::Agent.new(instructions: "Answer accurately.", model: "gpt-5.6-luna")
+    AimHelm::Agent.new(instructions: "Answer accurately.", model: "gpt-6-luna")
   end
 
   let(:record) { AimHelm::Agent::Record.capture(options:, tools: []) }

@@ -7,7 +7,7 @@ RSpec.describe AimHelm::Session do
   end
 
   let(:record) do
-    AimHelm::Agent::Record.new(system: "Answer accurately.", model: "gpt-5.6-luna")
+    AimHelm::Agent::Record.new(system: "Answer accurately.", model: "gpt-6-luna")
   end
 
   let(:model) { AimHelmRails::Session.create!(actor: user, tenant: user.organization) }

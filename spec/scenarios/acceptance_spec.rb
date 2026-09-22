@@ -58,11 +58,11 @@ RSpec.describe "Agent acceptance scenarios" do
     provider = fake_provider(
       text: JSON.generate(marker: "RUDDER VISION 42", description: "Three colored shapes."),
     )
-    use_providers("gpt-5.6-luna" => provider)
+    use_providers("gpt-6-luna" => provider)
     prompt = [image_block, { type: "text", text: "Describe the image and return its marker." }]
     agent = AimHelm::Agent.new(
       instructions: "Inspect the supplied image.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       output: result_schema,
     )
 
@@ -89,7 +89,7 @@ RSpec.describe "Agent acceptance scenarios" do
     first_provider = fake_provider(
       text: "I will remember cedar-17.",
       usage: { input_tokens: 3, output_tokens: 2 },
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
     )
     result_schema = AimHelm::Schema.define do
       required(:codeword).filled(:string, eql?: "cedar-17")
@@ -100,12 +100,12 @@ RSpec.describe "Agent acceptance scenarios" do
       model: "gpt-5.6-terra",
     )
     use_providers(
-      "gpt-5.6-luna" => first_provider,
+      "gpt-6-luna" => first_provider,
       "gpt-5.6-terra" => second_provider,
     )
     first_agent = AimHelm::Agent.new(
       instructions: "Remember supplied facts.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       budget: AimHelm::Budget.new(tokens: 5),
     )
     second_agent = AimHelm::Agent.new(
@@ -129,7 +129,7 @@ RSpec.describe "Agent acceptance scenarios" do
 
     expect(status(session)).to eq("completed")
     expect(result_schema.call(JSON.parse(assistant_text(session)))).to be_success
-    expect(run_records(session).map(&:model)).to eq(%w[gpt-5.6-luna gpt-5.6-terra])
+    expect(run_records(session).map(&:model)).to eq(%w[gpt-6-luna gpt-5.6-terra])
     replay_text = request_text(second_provider.requests.sole)
     expect(replay_text).to include("cedar-17", "Return the codeword")
     expect(event_types(session)).to include(:"run.failed", :"run.completed")
@@ -138,7 +138,7 @@ RSpec.describe "Agent acceptance scenarios" do
 
   it "parks a gated tool, persists one allow rule, and applies it on the next session" do
     provider = AimHelm::Providers::Fake.new(
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       turns: [
         tool_turn("publish_value", { value: "reviewed-42" }, id: "publish-1"),
         { text: "Published reviewed-42." },
@@ -146,11 +146,11 @@ RSpec.describe "Agent acceptance scenarios" do
         { text: "Published reviewed-43." },
       ],
     )
-    use_providers("gpt-5.6-luna" => provider)
+    use_providers("gpt-6-luna" => provider)
     tool = AimHelmRails::Tools::Acceptance::Publish
     agent = AimHelm::Agent.new(
       instructions: "Publish the requested value once.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       tools: [tool],
     )
 
@@ -216,10 +216,10 @@ RSpec.describe "Agent acceptance scenarios" do
 
   it "records a provider failure as a model outcome without duplicating its terminal" do
     provider = AimHelm::Providers::Fake.new(
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       turns: [{ error: "provider unavailable" }],
     )
-    use_providers("gpt-5.6-luna" => provider)
+    use_providers("gpt-6-luna" => provider)
     session = start(prompt: "Answer once.", agent: worker_agent)
 
     perform_session(session)
@@ -238,7 +238,7 @@ RSpec.describe "Agent acceptance scenarios" do
 
   it "runs a general child inline and returns its report to the parent tool call" do
     provider = AimHelm::Providers::Fake.new(
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       turns: [
         tool_turn(
           "spawn_agent",
@@ -254,10 +254,10 @@ RSpec.describe "Agent acceptance scenarios" do
         { text: "The child reported CHILD-READY." },
       ],
     )
-    use_providers("gpt-5.6-luna" => provider)
+    use_providers("gpt-6-luna" => provider)
     agent = AimHelm::Agent.new(
       instructions: "Delegate the task and report the inline result.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       subagents: [AimHelm::Subagent.open(tools: [])],
     )
 
@@ -285,7 +285,7 @@ RSpec.describe "Agent acceptance scenarios" do
       name: "ledger_specialist",
       description: "Checks ledger arithmetic.",
       system: "Compute ledger balances and show the arithmetic.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       tools: [],
     )
     parent_provider = AimHelm::Providers::Fake.new(
@@ -301,7 +301,7 @@ RSpec.describe "Agent acceptance scenarios" do
       ],
     )
     child_provider = AimHelm::Providers::Fake.new(
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       turns: [
         { text: "1200 + 350 - 90 = 1460. STEERED-DETAIL included." },
         { text: "The earlier computed balance was 1460." },
@@ -309,7 +309,7 @@ RSpec.describe "Agent acceptance scenarios" do
     )
     use_providers(
       "gpt-5.6-terra" => parent_provider,
-      "gpt-5.6-luna" => child_provider,
+      "gpt-6-luna" => child_provider,
     )
     agent = AimHelm::Agent.new(
       instructions: "Delegate ledger work and consume later reports.",
@@ -382,7 +382,7 @@ RSpec.describe "Agent acceptance scenarios" do
       name: "publishing_specialist",
       description: "Publishes reviewed values.",
       system: "Request both publishes, then report their outcomes.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       tools: [publish.identifier],
       modes: [:background],
     )
@@ -403,7 +403,7 @@ RSpec.describe "Agent acceptance scenarios" do
       ],
     )
     child_provider = AimHelm::Providers::Fake.new(
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       turns: [
         {
           tool_calls: [
@@ -424,7 +424,7 @@ RSpec.describe "Agent acceptance scenarios" do
     )
     use_providers(
       "gpt-5.6-terra" => parent_provider,
-      "gpt-5.6-luna" => child_provider,
+      "gpt-6-luna" => child_provider,
     )
     agent = AimHelm::Agent.new(
       instructions: "Delegate both reviewed publishes and consume the eventual report.",
@@ -531,7 +531,7 @@ RSpec.describe "Agent acceptance scenarios" do
       name: "reporter",
       description: "Produces the requested report.",
       system: "Return the requested report marker.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       tools: [],
     )
     parent_provider = AimHelm::Providers::Fake.new(
@@ -558,10 +558,10 @@ RSpec.describe "Agent acceptance scenarios" do
         { text: "Published approved-42 and consumed PARKED-REPORT-42." },
       ],
     )
-    child_provider = fake_provider(text: "PARKED-REPORT-42", model: "gpt-5.6-luna")
+    child_provider = fake_provider(text: "PARKED-REPORT-42", model: "gpt-6-luna")
     use_providers(
       "gpt-5.6-terra" => parent_provider,
-      "gpt-5.6-luna" => child_provider,
+      "gpt-6-luna" => child_provider,
     )
     agent = AimHelm::Agent.new(
       instructions: "Start the reporter and publish the reviewed value.",
@@ -607,13 +607,13 @@ RSpec.describe "Agent acceptance scenarios" do
 
   it "retries a transient provider error without writing a failed terminal" do
     provider = AimHelm::Providers::Fake.new(
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       turns: [
         { error: "retry this request", transient: true },
         { text: "Recovered after retry." },
       ],
     )
-    use_providers("gpt-5.6-luna" => provider)
+    use_providers("gpt-6-luna" => provider)
     session = start(prompt: "Recover this turn.", agent: worker_agent)
 
     perform_session(session)
@@ -632,7 +632,7 @@ RSpec.describe "Agent acceptance scenarios" do
 
   it "compacts at the configured context threshold and schedules replay reminders" do
     main_provider = AimHelm::Providers::Fake.new(
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       turns: [
         usage_turn("Turn 1 response", 1_000),
         usage_turn("Turn 2 response", 1_000),
@@ -647,12 +647,12 @@ RSpec.describe "Agent acceptance scenarios" do
       model: "claude-haiku-4-5",
     )
     use_providers(
-      "gpt-5.6-luna" => main_provider,
+      "gpt-6-luna" => main_provider,
       "claude-haiku-4-5" => compactor,
     )
     agent = AimHelm::Agent.new(
       instructions: "Maintain a long-running conversation.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       compaction: AimHelm::Compaction.new(model: "claude-haiku-4-5", threshold: 0.05),
       reminders: [AimHelm::Reminder.new(text: "Check REMINDER-42.", every: 2, after: 1)],
     )
@@ -694,7 +694,7 @@ RSpec.describe "Agent acceptance scenarios" do
         required(:marker).filled(:string, eql?: "RUDDER VISION 42")
         required(:shapes).array(:string, min_size?: 3)
       end
-      model = live_model("AGENT_MODEL", "gpt-5.6-luna", vision: true)
+      model = live_model("AGENT_MODEL", "gpt-6-luna", vision: true)
       agent = AimHelm::Agent.new(
         instructions: "Inspect the supplied image and return only the required structure.",
         model:,
@@ -718,7 +718,7 @@ RSpec.describe "Agent acceptance scenarios" do
       tool = AimHelmRails::Tools::Acceptance::Publish
       agent = AimHelm::Agent.new(
         instructions: "Call publish_value exactly once with value LIVE-APPROVED-42.",
-        model: live_model("AGENT_MODEL", "gpt-5.6-luna"),
+        model: live_model("AGENT_MODEL", "gpt-6-luna"),
         reasoning: :low,
         tools: [tool],
       )
@@ -768,7 +768,7 @@ RSpec.describe "Agent acceptance scenarios" do
   end
 
   def worker_agent
-    AimHelm::Agent.new(instructions: "Answer accurately.", model: "gpt-5.6-luna")
+    AimHelm::Agent.new(instructions: "Answer accurately.", model: "gpt-6-luna")
   end
 
   def image_block
@@ -783,7 +783,7 @@ RSpec.describe "Agent acceptance scenarios" do
     }
   end
 
-  def fake_provider(text:, usage: {}, model: "gpt-5.6-luna")
+  def fake_provider(text:, usage: {}, model: "gpt-6-luna")
     AimHelm::Providers::Fake.new(model:, turns: [{ text:, usage: }])
   end
 

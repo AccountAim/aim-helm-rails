@@ -73,7 +73,7 @@ RSpec.describe AimHelmRails::SweepStalledSessionsJob, type: :job do
       run_id: SecureRandom.uuid_v7, parent_run_id: SecureRandom.uuid_v7,
       call_id: SecureRandom.uuid_v7, name: "researcher",
       task: "Research", mode:,
-      options: AimHelm::Agent::Record.new(system: "Research.", model: "gpt-5.6-luna")
+      options: AimHelm::Agent::Record.new(system: "Research.", model: "gpt-6-luna")
     )
   end
 
@@ -81,7 +81,7 @@ RSpec.describe AimHelmRails::SweepStalledSessionsJob, type: :job do
     parent = AimHelmRails::Session.create!(actor: user, tenant: user.organization)
     aim_helm = AimHelm.session(parent.id)
     run_id = SecureRandom.uuid_v7
-    record = AimHelm::Agent::Record.new(system: "Research.", model: "gpt-5.6-luna")
+    record = AimHelm::Agent::Record.new(system: "Research.", model: "gpt-6-luna")
     aim_helm.append(:run_record, record.dump, key: "run:#{run_id}", run_id:)
     aim_helm.append(:user, { content: "Research" }, run_id:)
     aim_helm.append(:terminal, { outcome: :done }, key: "terminal:#{run_id}", run_id:)
@@ -120,7 +120,7 @@ RSpec.describe AimHelmRails::SweepStalledSessionsJob, type: :job do
   def append_child_message(aim_helm, run_id)
     payload = {
       content: "Research complete",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       provider: :openai,
       stop_reason: :stop,
     }

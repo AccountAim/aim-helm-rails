@@ -5,7 +5,7 @@ RSpec.describe AimHelmRails::Runtime do
   let(:chat) { AimHelmRails::Session.create!(actor: owner, tenant:, helmsman: "probe") }
 
   before do
-    definition = AimHelm.agent("gpt-5.6-luna")
+    definition = AimHelm.agent("gpt-6-luna")
     allow(AimHelmRails.host)
       .to receive(:helmsman).with("probe").and_return(double(agent: definition))
     allow(AimHelmRails.host).to receive(:authorize!)

@@ -38,7 +38,7 @@ module AgentWorkerSmoke
   def run_record
     options = AimHelm::Agent.new(
       instructions: "Do not call a provider.",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
     )
     AimHelm::Agent::Record.capture(options:, tools: [])
   end

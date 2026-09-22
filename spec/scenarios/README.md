@@ -22,7 +22,7 @@ The recipes run against the included Rails test app in isolated Docker services.
 The worker smoke uses the isolated `agent_acceptance` queue, never calls a provider, and deletes the
 records it creates. The recipe starts and stops its own worker process.
 
-Live vision and worker examples default to `gpt-5.6-luna`; orchestration parents default to
+Live vision and worker examples default to `gpt-6-luna`; orchestration parents default to
 `gpt-5.6-terra`. Override `AGENT_MODEL`, `AGENT_PARENT_MODEL`, or `AGENT_CHILD_MODEL` to exercise
 other catalog models. The vision fixture is embedded so replay does not depend on an expiring URL.
 

@@ -14,7 +14,7 @@ RSpec.describe "Enqueuing a session turn", type: :job do
   before do
     @actor = Organization.create!(name: "Queue actor")
     @session_id = SecureRandom.uuid_v7
-    definition = AimHelm.agent("gpt-5.6-luna")
+    definition = AimHelm.agent("gpt-6-luna")
     allow(AimHelmRails.host)
       .to receive(:helmsman).with("probe").and_return(double(agent: definition))
   end
