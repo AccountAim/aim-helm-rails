@@ -17,7 +17,7 @@ RSpec.describe AimHelmRails::Runtime do
 
     expect(chat.reload.actor).to eq(owner)
     expect(AimHelm.config.store.context(chat.id))
-      .to eq(AimHelmRails::ExecutionContext.new(actor: collaborator, tenant:))
+      .to eq(AimHelmRails::ExecutionContext.new(actor: collaborator, tenant:, owner:))
   end
 
   it "runs the model and reasoning the chat's key carries" do
