@@ -9,10 +9,16 @@ module AimHelmRails
 
         private_constant :ACCESS
 
+        class << self
+          # The host's store class: new(kind:, tenant:, actor:, root:) plus the port's methods.
+          attr_accessor :store
+        end
+
         module_function
 
         # workspace_bash needs the aim-helm-bashkit gem; without it the typed tools stand alone.
-        def register(registry = AimHelmRails.host.tools)
+        def register(registry = AimHelmRails.host.tools, store:)
+          Integration.store = store
           registry.register(*memory_tools, *knowledge_base_tools(access: :write))
           registry.register(workspace_bash) if defined?(AimHelmBashkit)
         end
@@ -40,14 +46,14 @@ module AimHelmRails
         # Memory follows the chat's owner, like scratch; a guest in a shared chat only reads it.
         def memory_store(context)
           execution = context.app
-          store = Adapters::ActiveRecord.new(
+          memory = Integration.store.new(
             kind: :memory, actor: execution.owner, tenant: execution.tenant,
           )
-          execution.actor == execution.owner ? store : store.readonly
+          execution.actor == execution.owner ? memory : memory.readonly
         end
 
         def knowledge_base_store(context)
-          Adapters::ActiveRecord.new(kind: :knowledge_base, tenant: context.app.tenant)
+          Integration.store.new(kind: :knowledge_base, tenant: context.app.tenant)
         end
 
         # Scratch belongs to one conversation and is keyed by its root chat, so a subagent works
@@ -58,8 +64,8 @@ module AimHelmRails
 
         # One scratch store per owner, a folder per chat.
         def chat_scratch(chat)
-          Adapters::ActiveRecord.new(kind: :scratch, tenant: chat.tenant, actor: chat.root.actor,
-                                     root: "#{chat.root.id}/")
+          Integration.store.new(kind: :scratch, tenant: chat.tenant, actor: chat.root.actor,
+                                root: "#{chat.root.id}/")
         end
       end
     end

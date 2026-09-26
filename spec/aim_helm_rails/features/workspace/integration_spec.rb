@@ -4,7 +4,7 @@ RSpec.describe AimHelmRails::Features::Workspace::Integration do
                  email: "first-workspace-#{SecureRandom.uuid_v7}@example.com")
   end
 
-  before { described_class.register(AimHelmRails::Tool) }
+  before { described_class.register(AimHelmRails::Tool, store: MemoryStore) }
 
   let(:memory_identifiers) do
     %w[workspace/memory/list workspace/memory/read workspace/memory/write

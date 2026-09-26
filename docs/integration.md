@@ -232,24 +232,23 @@ image tool results, separate from lazy resource rendering.
 
 ## Workspaces
 
-Operations are scoped by tenant, optional actor, kind, and key. A nil actor shares documents within
-the tenant; an actor gives personal storage within the tenant.
+The host owns storage: a table, a model, and a store class implementing the port, built as
+`new(kind:, tenant:, actor: nil, root: "")` with `read`, `write`, `delete`, `list(prefix, text:)`,
+`entries(prefix, text:)`, `snapshot`, `compare_and_write(path, content, expected_revision:)`, and
+`readonly`, a copy that refuses writes. A nil actor shares documents within the tenant; an actor
+gives personal storage.
 
 ```ruby
-memory = AimHelmRails::Features::Workspace::Adapters::ActiveRecord
-  .new(kind: :memory, actor:, tenant:)
-knowledge = AimHelmRails::Features::Workspace::Adapters::ActiveRecord
-  .new(kind: :knowledge_base, tenant:)
-
-memory.write("profile.md", "Prefers concise reports.")
-knowledge.read("products/widgets.md")
+config.to_prepare do
+  AimHelmRails::Features::Workspace::Integration.register(store: MyApp::Workspace::Store)
+end
 ```
 
-`AimHelmRails::Features::Workspace` wraps an adapter to provide generated list, read, write, and
-edit tools; `Integration.register` adds the memory and knowledge base sets, plus `workspace_bash`
-when the `aim-helm-bashkit` gem is bundled: a sandboxed shell over documents named in `paths`,
-with a per-chat scratch store as the only writable mount. Conditional writes reject stale revisions
-without replacing newer documents. Document browsing and rendering belong to the host.
+`Integration` builds the memory, knowledge base, and per-chat scratch stores from that class and
+registers the list, read, write, and edit tools, plus `workspace_bash` when the `aim-helm-bashkit`
+gem is bundled: a sandboxed shell over documents named in `paths`, with scratch as the only
+writable mount. Conditional writes reject stale revisions without replacing newer documents.
+Document browsing and rendering belong to the host.
 
 ## Validation
 

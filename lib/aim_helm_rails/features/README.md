@@ -22,11 +22,10 @@ feature is split across two directories so the move is a copy, not a rewrite:
 
 ## Rules for `lib/aim_helm_rails/features`
 
-- One adapter per storage backend, implementing the port over app models.
+- Storage is the host's: `Integration.register(store:)` takes the host's store class, which
+  implements the port over the host's own table and model.
 - `register` adds tools to the supplied registry; grant helpers (`knowledge_base_tools(access:)`) own
   which operations a helmsman receives.
-- An adapter may later graduate to the gem's optional Active Record adapters, but only once it owns
-  its table instead of reaching into app models.
 
 ## Moving a feature
 
@@ -39,6 +38,6 @@ feature is split across two directories so the move is a copy, not a rewrite:
 
 - `workspace` — documents behind an adapter with list/read/write/edit tools, revision-checked
   edits, and `workspace_bash`, a sandboxed shell (optional `aim-helm-bashkit` gem) over the
-  documents a script names. Host adapter: `Adapters::ActiveRecord` over `WorkspaceDocument`. Lives
-  wholly under `lib/aim_helm_rails/features/workspace` for now; it leans on ActiveSupport in a few
-  spots, to be removed before it moves to the gem.
+  documents a script names. The host brings the store (see `docs/integration.md`). Lives wholly
+  under `lib/aim_helm_rails/features/workspace` for now; it leans on ActiveSupport in a few spots,
+  to be removed before it moves to the gem.
