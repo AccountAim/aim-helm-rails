@@ -20,7 +20,7 @@ RSpec.describe "AimHelmRails migration primary keys", type: :model do
 
   let(:models) do
     [AimHelmRails::Session, AimHelmRails::SessionEntry, AimHelmRails::Attachment,
-     AimHelmRails::AllowRule, AimHelmRails::WorkspaceDocument,
+     AimHelmRails::AllowRule,
      ActiveStorage::Blob, ActiveStorage::Attachment, ActiveStorage::VariantRecord,
      AimHelmRailsMigrationSpec::Actor]
   end
@@ -48,7 +48,7 @@ RSpec.describe "AimHelmRails migration primary keys", type: :model do
 
   def load_engine_models
     # Reload models so their connection and association caches use the isolated database.
-    %w[Session SessionEntry Attachment AllowRule WorkspaceDocument].each do |name|
+    %w[Session SessionEntry Attachment AllowRule].each do |name|
       stub_const("AimHelmRails::#{name}", Class.new(AimHelmRails::ApplicationRecord))
       load AimHelmRails::Engine.root.join("app/models/#{name.underscore}.rb")
     end
@@ -150,18 +150,13 @@ RSpec.describe "AimHelmRails migration primary keys", type: :model do
           .to raise_error(ActiveRecord::InvalidForeignKey)
       end
 
-      it "uses the host's keys for allow rules and workspace documents" do
+      it "uses the host's keys for allow rules" do
         rule = AimHelmRails::AllowRule.create!(actor:, tenant:, tool_name: "read")
-        document = AimHelmRails::WorkspaceDocument.create!(
-          actor:, tenant:, kind: "memory", path: "notes.md", content: "Remember this",
-        )
 
-        [rule, document].each do |record|
-          expect(record.reload.id).to be_a(key_type == :uuid ? String : Integer)
-          expect(record.actor).to eq(actor)
-          expect(record.tenant).to eq(tenant)
-          expect(record.id[14]).to eq("7") if key_type == :uuid
-        end
+        expect(rule.reload.id).to be_a(key_type == :uuid ? String : Integer)
+        expect(rule.actor).to eq(actor)
+        expect(rule.tenant).to eq(tenant)
+        expect(rule.id[14]).to eq("7") if key_type == :uuid
       end
 
       it "enforces session foreign keys" do

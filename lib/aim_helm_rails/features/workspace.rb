@@ -1,40 +1,70 @@
 module AimHelmRails
   module Features
-    module Workspace
-      ACCESS = {
-        read: %i[list read search].freeze,
-        write: %i[list read write edit search].freeze,
-      }.freeze
+    class Workspace
+      Snapshot = Data.define(:content, :revision) do
+        def initialize(content:, revision:)
+          super(content: content.dup.freeze, revision: revision.dup.freeze)
+        end
 
-      private_constant :ACCESS
-
-      module_function
-
-      def register(registry = AimHelmRails.host.tools)
-        registry.register(*memory_tools, *knowledge_base_tools(access: :write))
+        def self.for(content)
+          new(content:, revision: Digest::SHA256.hexdigest(content.b))
+        end
       end
 
-      def memory_tools
-        AimHelm::Features::Workspace.adapter do
-          execution = it.app
-          Adapters::ActiveRecord
-            .new(kind: :memory, actor: execution.actor, tenant: execution.tenant)
-        end.tools(
-          name: :memory,
-          purpose: "the current user's private durable memory across conversations",
-        )
+      class ConflictError < StandardError
+        attr_reader :path, :expected_revision, :actual_revision
+
+        def initialize(path, expected_revision: nil, actual_revision: nil)
+          @path = path
+          @expected_revision = expected_revision
+          @actual_revision = actual_revision
+
+          super("#{path.inspect} changed; read it again")
+        end
       end
 
-      def knowledge_base_tools(access: :read)
-        AimHelm::Features::Workspace.adapter do
-          execution = it.app
-          Adapters::ActiveRecord.new(kind: :knowledge_base, tenant: execution.tenant)
-        end.tools(
-          name: :knowledge_base,
-          purpose: "the shared durable knowledge base",
-          only: ACCESS.fetch(access.to_sym),
-        )
+      class EditError < StandardError; end
+      class InvalidPath < StandardError; end
+      class ReadOnly < StandardError; end
+
+      MAX_PATH = 512
+
+      # A document path is relative, with no empty, ".", or ".." segments: "notes/plan.md".
+      def self.path!(path)
+        path = path.to_s
+        raise InvalidPath, "path over #{MAX_PATH} characters" if path.length > MAX_PATH
+
+        segments = path.split("/", -1)
+        return path if segments.any? && segments.none? { it.empty? || %w[. ..].include?(it) }
+
+        raise InvalidPath, "not a document path: #{path.inspect}"
       end
+
+      attr_reader :adapter
+
+      def self.adapter(adapter = nil, &resolver)
+        raise ArgumentError, "pass an adapter or a resolver block" if adapter.nil? == resolver.nil?
+
+        new(adapter:, resolver:)
+      end
+
+      def initialize(adapter:, resolver:)
+        @adapter = adapter
+        @resolver = resolver
+      end
+
+      def tools(name:, purpose:, only: Tools::OPERATIONS)
+        Tools.new(self, name:, purpose:, only:).to_a
+      end
+
+      def adapter_for(context = nil) = @resolver ? @resolver.call(context) : adapter
+      def read(...) = adapter_for.read(...)
+      def write(...) = adapter_for.write(...)
+      def delete(...) = adapter_for.delete(...)
+      def list(...) = adapter_for.list(...)
+      def atomic_writes? = adapter_for.atomic_writes?
+      def snapshot(...) = adapter_for.snapshot(...)
+      def compare_and_write(...) = adapter_for.compare_and_write(...)
     end
   end
 end

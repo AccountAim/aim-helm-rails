@@ -1,6 +1,4 @@
-# frozen_string_literal: true
-
-module AimHelm
+module AimHelmRails
   module Features
     class Workspace
       class Edit

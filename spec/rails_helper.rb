@@ -3,6 +3,7 @@ require_relative "dummy/config/environment"
 require "rspec/rails"
 require_relative "support/identities"
 require_relative "support/host"
+require_relative "support/memory_store"
 
 ActiveRecord::Migration.maintain_test_schema!
 

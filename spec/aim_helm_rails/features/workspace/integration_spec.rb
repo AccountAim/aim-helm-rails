@@ -1,25 +1,23 @@
-RSpec.describe AimHelmRails::Features::Workspace do
+RSpec.describe AimHelmRails::Features::Workspace::Integration do
   let(:first_user) do
     User.create!(organization: test_organization, name: "First",
                  email: "first-workspace-#{SecureRandom.uuid_v7}@example.com")
   end
 
-  before { described_class.register(AimHelmRails::Tool) }
+  before { described_class.register(AimHelmRails::Tool, store: MemoryStore) }
 
   let(:memory_identifiers) do
     %w[workspace/memory/list workspace/memory/read workspace/memory/write
-       workspace/memory/edit workspace/memory/search]
+       workspace/memory/edit]
   end
 
   let(:knowledge_base_read_identifiers) do
-    %w[workspace/knowledge_base/list workspace/knowledge_base/read
-       workspace/knowledge_base/search]
+    %w[workspace/knowledge_base/list workspace/knowledge_base/read]
   end
 
   let(:knowledge_base_write_identifiers) do
     %w[workspace/knowledge_base/list workspace/knowledge_base/read
-       workspace/knowledge_base/write workspace/knowledge_base/edit
-       workspace/knowledge_base/search]
+       workspace/knowledge_base/write workspace/knowledge_base/edit]
   end
 
   it "registers every memory tool under a durable identifier" do
@@ -27,7 +25,7 @@ RSpec.describe AimHelmRails::Features::Workspace do
 
     expect(identifiers).to eq(memory_identifiers)
     expect(identifiers.map { AimHelmRails::Tool.resolve(it).name }).to eq(
-      %w[memory_list memory_read memory_write memory_edit memory_search],
+      %w[memory_list memory_read memory_write memory_edit],
     )
   end
 
