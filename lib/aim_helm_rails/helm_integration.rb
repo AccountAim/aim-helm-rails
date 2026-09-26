@@ -13,7 +13,6 @@ module AimHelmRails
     end
 
     def configure_runtime(config)
-      Features::Workspace.register(AimHelmRails.host.tools)
       config.logger = Rails.logger
       config.telemetry = method(:instrument)
       config.tools = AimHelmRails.host.tools

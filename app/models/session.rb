@@ -39,7 +39,7 @@ module AimHelmRails
 
     def aim_helm_context
       ExecutionContext.new(actor: GlobalID::Locator.locate(execution_actor_gid || actor_gid),
-                           tenant:)
+                           tenant:, owner: root.actor)
     end
 
     def title = name.presence || history.title
