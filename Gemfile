@@ -2,7 +2,8 @@ source "https://rubygems.org"
 
 gemspec
 
-gem "aim-helm", git: "https://github.com/AccountAim/aim-helm.git", require: false
+gem "aim-helm", git: "https://github.com/AccountAim/aim-helm.git", branch: "feat/tool-concurrency",
+                require: false
 gem "aim-helm-bashkit"
 gem "pg"
 gem "propshaft"
