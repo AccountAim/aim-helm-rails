@@ -2,8 +2,8 @@ source "https://rubygems.org"
 
 gemspec
 
-gem "aim-helm-bashkit"
 gem "aim-helm", git: "https://github.com/AccountAim/aim-helm.git", require: false
+gem "aim-helm-bashkit"
 gem "pg"
 gem "propshaft"
 gem "rspec-rails", require: false
