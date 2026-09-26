@@ -1,3 +1,5 @@
+require_relative "memory_store"
+
 module AimHelmRailsSpec
   module Host
     module_function
