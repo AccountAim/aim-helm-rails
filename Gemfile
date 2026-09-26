@@ -2,6 +2,7 @@ source "https://rubygems.org"
 
 gemspec
 
+gem "aim-helm-bashkit"
 gem "aim-helm", git: "https://github.com/AccountAim/aim-helm.git", require: false
 gem "pg"
 gem "propshaft"

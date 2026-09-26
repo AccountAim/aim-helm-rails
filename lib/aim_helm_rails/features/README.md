@@ -37,5 +37,8 @@ feature is split across two directories so the move is a copy, not a rewrite:
 
 ## Current
 
-- `workspace` — documents behind an adapter with list/read/write/edit/search tools and
-  revision-checked edits. Host adapter: `Adapters::ActiveRecord` over `WorkspaceDocument`.
+- `workspace` — documents behind an adapter with list/read/write/edit tools, revision-checked
+  edits, and `workspace_bash`, a sandboxed shell (optional `aim-helm-bashkit` gem) over the
+  documents a script names. Host adapter: `Adapters::ActiveRecord` over `WorkspaceDocument`. Lives
+  wholly under `lib/aim_helm_rails/features/workspace` for now; it leans on ActiveSupport in a few
+  spots, to be removed before it moves to the gem.

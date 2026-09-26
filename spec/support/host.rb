@@ -22,7 +22,7 @@ RSpec.configure do |config|
     allow(AimHelmRails).to receive(:host).and_return(AimHelmRailsSpec::Host)
     @previous_aim_helm_tools = AimHelm.config.tools
     AimHelm.configure { it.tools = AimHelmRails::Tool }
-    AimHelmRails::Features::Workspace.register(AimHelmRails::Tool)
+    AimHelmRails::Features::Workspace::Integration.register(AimHelmRails::Tool)
   end
 
   config.after do

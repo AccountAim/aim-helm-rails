@@ -1,5 +1,5 @@
 RSpec.describe AimHelmRails::Features::Workspace::Adapters::ActiveRecord do
-  subject(:workspace) { AimHelm::Features::Workspace.adapter(described_class.new(**scope)) }
+  subject(:workspace) { AimHelmRails::Features::Workspace.adapter(described_class.new(**scope)) }
 
   let(:scope) { { kind: :memory, tenant: test_organization } }
 
@@ -27,6 +27,17 @@ RSpec.describe AimHelmRails::Features::Workspace::Adapters::ActiveRecord do
     expect(engineering.read("profile.md")).to eq("Engineering")
     expect(described_class.new(kind: :memory, tenant: test_organization).read("profile.md"))
       .to eq("Private to the first tenant")
+  end
+
+  it "reads but refuses every write when read-only" do
+    described_class.new(**scope).write("profile.md", "Owner wrote this")
+    guest = described_class.new(**scope).readonly
+
+    expect(guest.read("profile.md")).to eq("Owner wrote this")
+    expect { guest.write("profile.md", "x") }.to raise_error(AimHelmRails::Features::Workspace::ReadOnly)
+    expect { guest.delete("profile.md") }.to raise_error(AimHelmRails::Features::Workspace::ReadOnly)
+    expect { guest.compare_and_write("new.md", "x", expected_revision: nil) }
+      .to raise_error(AimHelmRails::Features::Workspace::ReadOnly)
   end
 
   it "filters the listing by path prefix" do
@@ -58,7 +69,7 @@ RSpec.describe AimHelmRails::Features::Workspace::Adapters::ActiveRecord do
 
     error = begin
       workspace.compare_and_write("profile.md", "Three", expected_revision: stale.revision)
-    rescue AimHelm::Features::Workspace::ConflictError => e
+    rescue AimHelmRails::Features::Workspace::ConflictError => e
       e
     end
 
@@ -67,7 +78,7 @@ RSpec.describe AimHelmRails::Features::Workspace::Adapters::ActiveRecord do
 
     expect do
       workspace.compare_and_write("profile.md", "Four", expected_revision: nil)
-    end.to raise_error(AimHelm::Features::Workspace::ConflictError)
+    end.to raise_error(AimHelmRails::Features::Workspace::ConflictError)
 
     expect(workspace.read("profile.md")).to eq("Two")
   end

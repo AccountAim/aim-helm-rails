@@ -245,9 +245,11 @@ memory.write("profile.md", "Prefers concise reports.")
 knowledge.read("products/widgets.md")
 ```
 
-The Rails-free `AimHelm::Features::Workspace` wraps an adapter to provide generated list, read,
-write, edit, and search tools. Conditional writes reject stale revisions without replacing newer
-documents. Wiki tools, navigation, and rendering belong to the host.
+`AimHelmRails::Features::Workspace` wraps an adapter to provide generated list, read, write, and
+edit tools; `Integration.register` adds the memory and knowledge base sets, plus `workspace_bash`
+when the `aim-helm-bashkit` gem is bundled: a sandboxed shell over documents named in `paths`,
+with a per-chat scratch store as the only writable mount. Conditional writes reject stale revisions
+without replacing newer documents. Document browsing and rendering belong to the host.
 
 ## Validation
 
