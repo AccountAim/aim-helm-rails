@@ -1,10 +1,9 @@
 module AimHelmRails
   module Features
     class Workspace
-      # Runs a script in a sandbox whose home, /scratch, holds the whole scratch space, with the
-      # listed documents from other stores mounted at /<mount>/<path>. Only files under /scratch
-      # are saved back, new or changed; a change anywhere else is discarded and reported.
-      # Nothing is ever deleted from a store.
+      # Runs a script in a sandbox holding only the documents named in `paths`, each at
+      # /<mount>/<path>. Files under /scratch are saved back, new or changed; a change anywhere
+      # else is discarded and reported. Nothing is ever deleted from a store.
       class Shell
         # The one writable mount; "scratch/clips/a.txt" saves as clips/a.txt in the scratch store.
         SCRATCH_ROOT = "scratch".freeze
@@ -18,12 +17,13 @@ module AimHelmRails
         CUT = "\n… [output cut at #{OUTPUT_SIZE}; redirect into scratch/ or filter further]".freeze
 
         GUIDE = <<~TEXT.freeze
-          A sandboxed bash with the files named in paths mounted at the same path. Only writes under
+          A sandboxed bash holding only the files named in paths, each at its own path; scratch
+          paths come from a clipped read or an earlier call's written list. Only writes under
           scratch/ are kept; /tmp is cleared after each call. Text commands only, rg, sed, awk, jq,
           sort and the like; no interpreters, no network. Each call is a fresh shell. Output over
           #{OUTPUT_SIZE} is cut.
 
-            ls -R scratch; wc -l scratch/clips/x/published.sql  # what is here, how big
+            wc -l scratch/clips/x/published.sql  # how big
             rg -n -i -C 2 'double count' knowledge_base/app/*.md  # the lines around each hit
             rg -o "THEN '[^']+'" scratch/clips/x/published.sql | sort -u  # every distinct label, once
             rg -n JOIN knowledge_base/app/platform.md > scratch/hits.txt  # keep a result

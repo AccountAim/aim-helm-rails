@@ -100,6 +100,17 @@ RSpec.describe AimHelmRails::Features::Workspace::Tools do
     WINDOW
   end
 
+  it "marks the end when a later window reaches the last line, and shows nothing for nothing" do
+    write("notes/one.md", "one\ntwo\nthree\n", context:)
+    write("empty.md", "", context:)
+
+    tail = tools.fetch("memory_read").call({ "path" => "notes/one.md", "offset" => 2 }, context:)
+    empty = tools.fetch("memory_read").call({ "path" => "empty.md" }, context:)
+
+    expect(tail.content).to eq("2: two\n3: three\n\n[lines 2-3 of 3; the end]")
+    expect(empty.content).to eq("")
+  end
+
   it "says how long a file is when the window starts past its end" do
     write("notes/one.md", "one\ntwo\nthree\n", context:)
 

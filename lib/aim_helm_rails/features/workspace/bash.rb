@@ -1,7 +1,7 @@
 module AimHelmRails
   module Features
     class Workspace
-      # One shell whose home is scratch, with the other stores mountable beside it by path.
+      # One shell over the documents a call names, scratch the only writable mount.
       # `resolver.call(mount, context)` supplies each store's adapter.
       module Bash
         MOUNTS = %w[scratch memory knowledge_base].freeze

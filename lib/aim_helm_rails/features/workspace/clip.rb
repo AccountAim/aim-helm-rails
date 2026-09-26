@@ -12,7 +12,7 @@ module AimHelmRails
           lines = text.lines
           total = lines.length
           first = [offset, 1].max
-          return beyond(total) if first > total
+          return outside(total) if first > total
 
           shown, cut = fit(render(lines, first, limit, numbered))
           last = first + shown.length - 1
@@ -21,7 +21,10 @@ module AimHelmRails
           "#{shown.join}\n#{trailer(at, first, last, total, cut)}"
         end
 
-        def self.beyond(total) = "[only #{total} lines; start at or before line #{total}]"
+        # Past the last line; an empty document has nothing to show or point at.
+        def self.outside(total)
+          total.zero? ? "" : "[only #{total} lines; start at or before line #{total}]"
+        end
 
         def self.render(lines, first, limit, numbered)
           last = [first + [limit, 1].max - 1, lines.length].min
@@ -40,6 +43,8 @@ module AimHelmRails
         def self.trailer(at, first, last, total, cut)
           where = "lines #{first}-#{last} of #{total}"
           where = "line #{first} cut at #{BYTES} bytes, #{total} lines in all" if cut
+          return "[#{where}; the end]" if !cut && last >= total
+
           path = at.delete_prefix("/")
           <<~TEXT.chomp
             [#{where}; the rest through workspace_bash with paths ["#{path}"],
@@ -47,7 +52,7 @@ module AimHelmRails
           TEXT
         end
 
-        private_class_method :beyond, :render, :fit, :trailer
+        private_class_method :outside, :render, :fit, :trailer
       end
     end
   end

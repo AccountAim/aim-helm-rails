@@ -40,6 +40,10 @@ module AimHelmRails
 
         # One shell with scratch as its home and the other stores mountable beside it.
         def workspace_bash
+          unless defined?(AimHelmBashkit)
+            raise AimHelm::ConfigurationError, "workspace_bash needs the aim-helm-bashkit gem"
+          end
+
           Bash.define { |mount, context| public_send(:"#{mount}_store", context) }
         end
 
