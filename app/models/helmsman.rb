@@ -6,17 +6,17 @@ module AimHelmRails
     COMPACT_AFTER_TOKENS = ENV.fetch("COMPACT_AFTER_TOKENS", 250_000).to_i
 
     class << self
-      def agent
-        AimHelm.agent(
-          helmsman_model,
-          advance: helmsman_advance_mode,
-          compaction:,
+      def agent = AimHelm.agent(helmsman_model, **definition.compact)
+
+      # Unset declarations are left out so the agent's own defaults apply.
+      def definition
+        {
+          advance: helmsman_advance_mode, compaction:,
           description: helmsman_description, instructions: helmsman_instructions,
-          max_turns: helmsman_max_turns,
-          name: helmsman_name, reasoning: helmsman_reasoning,
-          subagents: subagents.presence,
+          max_turns: helmsman_max_turns, name: helmsman_name, reasoning: helmsman_reasoning,
+          subagents: subagents.presence, tool_concurrency: helmsman_tool_concurrency,
           tools: helmsman_tools.map { AimHelmRails::Tool.definition(it) }
-        )
+        }
       end
 
       # :inline runs the helmsman in the caller's process; the default queues it on the worker.
@@ -50,6 +50,13 @@ module AimHelmRails
         define_singleton_method(:helmsman_max_turns) { value }
       end
 
+      # Tool calls a turn runs at once; inline subagents count against it.
+      def tool_concurrency(value = nil)
+        return helmsman_tool_concurrency unless value
+
+        define_singleton_method(:helmsman_tool_concurrency) { value }
+      end
+
       def tools(classes = nil)
         return helmsman_tools unless classes
 
@@ -76,6 +83,7 @@ module AimHelmRails
       def helmsman_description = nil
       def helmsman_max_turns = 20
       def helmsman_reasoning = nil
+      def helmsman_tool_concurrency = nil
       def helmsman_tools = [].freeze
       def subagent_entries = [].freeze
 
