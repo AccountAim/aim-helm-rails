@@ -27,7 +27,9 @@
 <!-- Turbo appends this chat's event elements and stream source here, outside the markup Vue renders. -->
 <div id="agent-events-<%= chat.id %>" data-aim-helm-rails--chat-target="events" class="hidden"></div>
 
-<div data-aim-helm-rails--chat-target="island" class="contents">
+<!-- Cloaked until Vue mounts, which removes v-cloak from its root: the raw template has no composer
+     layout, and its transcript tag reads as messages. -->
+<div data-aim-helm-rails--chat-target="island" class="contents" v-cloak>
 <div data-agent-chat class="group relative isolate flex h-full min-h-0 overflow-hidden @container/chat"
      :aria-busy="busy || null"
      :data-pane="contextSrc && contextFold !== 'closed' ? '' : null" :data-fold="contextFold">
