@@ -28,6 +28,15 @@ RSpec.describe AimHelmRails::Runtime do
       .to include("model" => "gpt-5.6-terra", "reasoning" => "high")
   end
 
+  it "runs one turn on another key and leaves the chat's own in place" do
+    described_class.signal(chat, "Opened",
+                           chat_key: AimHelmRails::ChatKey.new("probe:gpt-5.6-terra/low"))
+
+    expect(chat.entries.where(kind: "run_record").sole.payload)
+      .to include("model" => "gpt-5.6-terra", "reasoning" => "low")
+    expect(chat.reload.helmsman).to eq("probe")
+  end
+
   it "does not change the execution grant while a turn is pending" do
     described_class.run(chat, "Read the report", actor: owner, tenant:)
 
