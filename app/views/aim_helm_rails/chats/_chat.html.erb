@@ -1,7 +1,10 @@
-<%# locals: (chat:, draft: nil, autosubmit: false, context: nil, pane: {}, examples: [], empty_state: nil) %>
+<%# locals: (chat:, draft: nil, autosubmit: false, context: nil, pane: {}, examples: [], empty_state: nil, composer_position: :center) %>
 <!-- The whole chat, mountable in any element with a height: it reads the chat it is given and
      nothing of the page around it. When its first message creates the chat it announces
-     `agent:chat-created` with the path; the page decides what to do with its address. -->
+     `agent:chat-created` with the path; the page decides what to do with its address.
+     `composer_position: :center` floats the composer mid-chat until the first message; `:bottom`
+     keeps it there from the start, for a chat that opens with a message. -->
+<% centered = composer_position == :center %>
 <% routes = AimHelmRails::Engine.routes.url_helpers %>
 <% choices = aim_helm_rails_chat_choices(chat) %>
 <!-- The first post creates the chat, with what it was opened on. -->
@@ -37,12 +40,6 @@
             transition-[max-width] duration-300 ease-out group-data-[pane]:@5xl/chat:max-w-[min(40rem,40%)]
             group-data-[pane]:@5xl/chat:min-w-[30rem]">
 
-  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
-    <div class="absolute -top-40 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full
-                bg-primary/[0.08] blur-3xl"></div>
-    <div class="absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-brand-secondary/[0.12] blur-3xl"></div>
-  </div>
-
   <main ref="container" @scroll="onScroll"
         class="w-full grow basis-0 min-h-0 overflow-y-auto [scrollbar-gutter:stable]">
     <div id="agent-messages" class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
@@ -59,9 +56,9 @@
     </button>
   </div>
 
-  <div class="flex w-full shrink-0 flex-col items-center px-4 sm:px-6 -translate-y-[10px]
-              transition-transform duration-500
-              group-has-[#agent-messages:not(:empty)]:translate-y-0">
+  <div class="flex w-full shrink-0 flex-col items-center px-4 sm:px-6
+              <%= "-translate-y-[10px] transition-transform duration-500
+                   group-has-[#agent-messages:not(:empty)]:translate-y-0" if centered %>">
     <div class="mb-8 overflow-hidden text-center transition-all duration-500
                 group-has-[#agent-messages:not(:empty)]:mb-0 group-has-[#agent-messages:not(:empty)]:max-h-0
                 group-has-[#agent-messages:not(:empty)]:opacity-0">
@@ -146,9 +143,11 @@
     <% end %>
   </div>
 
-  <div aria-hidden="true"
-       class="grow basis-0 transition-[flex-grow] duration-500 ease-out
-              group-has-[#agent-messages:not(:empty)]:grow-0"></div>
+  <% if centered %>
+    <div aria-hidden="true"
+         class="grow basis-0 transition-[flex-grow] duration-500 ease-out
+                group-has-[#agent-messages:not(:empty)]:grow-0"></div>
+  <% end %>
 </div>
 
 <!-- The pane splits a wide chat and slides over a narrow one; `auto` opens only where it splits,
