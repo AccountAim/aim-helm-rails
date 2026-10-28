@@ -1,12 +1,20 @@
 module AimHelmRails
   module Runtime
     class << self
-      # Queues a turn for the session's helmsman and returns the session; the reply arrives later over
-      # the event stream. A helmsman that advances inline runs here instead, and the session comes
-      # back answered.
-      def run(session, prompt, actor: session.actor, tenant: session.tenant)
+      # Sends the prompt and returns right away; a background job writes the reply. A helmsman
+      # declared with `advance :inline` replies before this returns.
+      # Pass `chat_key` to answer just this prompt with a different helmsman or model.
+      #
+      # Example: a chat where we want to greet the user with a message on startup.
+      # 1. The chat opens with a system message. Pass
+      #    `chat_key: ChatKey.new("greeter:gpt-6-luna/none")` so the user is not left waiting on a
+      #    greeting.
+      # 2. The user's first message passes nothing, so the chat's own key
+      #    ("analyst:gpt-6.1-sol/high") answers it.
+      def run(session, prompt, actor: session.actor, tenant: session.tenant,
+              chat_key: session.chat_key)
         authorize!(session, actor:, tenant:, action: :update)
-        definition = with_registered_tools(session.chat_key.agent)
+        definition = with_registered_tools(chat_key.agent)
         aim_helm_session = AimHelm.session(session.id)
 
         session.with_lock do
@@ -35,7 +43,7 @@ module AimHelmRails
       # Tells a session's agent something happened outside the conversation — a button click,
       # not typing. The event runs a normal turn; the transcript hides the machine-authored
       # message, so the agent's reaction reads as a continuation.
-      def signal(session, event) = run(session, "<system-event>#{event}</system-event>")
+      def signal(session, event, **) = run(session, "<system-event>#{event}</system-event>", **)
 
       # The assistant's last words in a session, for a caller that ran a turn and wants the answer
       # rather than the transcript.
