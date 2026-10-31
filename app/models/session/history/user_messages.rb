@@ -11,7 +11,7 @@ module AimHelmRails
           @entries = entries
         end
 
-        def title = visible_texts.first&.truncate(60) || "Untitled"
+        def title = visible_texts.first || "Untitled"
         def count = visible_texts.count
 
         def text(entry)

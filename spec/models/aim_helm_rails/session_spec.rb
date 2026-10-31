@@ -17,6 +17,17 @@ RSpec.describe AimHelmRails::Session, type: :model do
     expect(session.aim_helm_context.actor.organization).not_to eq(original_tenant)
   end
 
+  it "titles a chat with its whole first message, leaving truncation to the view" do
+    message = "Compare weekly traffic across every region and explain each change week over week"
+    AimHelm.session(session.id).append(
+      :user,
+      { content: [{ type: "text", text: "<user-message>#{message}</user-message>" }] },
+      run_id: SecureRandom.uuid_v7,
+    )
+
+    expect(session.reload.title).to eq(message)
+  end
+
   it "projects chat history from durable run and provider-turn entries" do
     aim_helm = AimHelm.session(session.id)
     run_id = SecureRandom.uuid_v7
